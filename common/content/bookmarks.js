@@ -216,7 +216,6 @@ var Bookmarks = Module("bookmarks", {
      * use in completion functions.
      */
     get searchEngines() {
-        let searchEngines = [];
         let aliases = {};
         return iter(services.browserSearch.getVisibleEngines({})).map(function ([, engine]) {
             let alias = engine.alias;
@@ -430,7 +429,7 @@ var Bookmarks = Module("bookmarks", {
         const tags = {
             names: ["-tags", "-T"],
             description: "A comma-separated list of tags",
-            completer: function tags(context, args) {
+            completer: function tags(context) {
                 context.generate = function () Ary(b.tags
                                                    for (b of bookmarkcache)
                                                    if (b.tags))
@@ -683,7 +682,6 @@ var Bookmarks = Module("bookmarks", {
                     context.format = history.format;
                     context.title = [/*L*/keyword + " Quick Search"];
                     context.keys = { text: "url", description: "title", icon: "icon" };
-                    // context.background = true;
                     context.compare = CompletionContext.Sort.unsorted;
                     context.generate = function () {
                         let [begin, end] = item.url.split("%s");

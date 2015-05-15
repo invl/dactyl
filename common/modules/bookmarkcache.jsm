@@ -48,7 +48,7 @@ update(Bookmark.prototype, {
         let res = [];
         res.toString = function () this.join("/");
 
-        let id = this.id, parent, title;
+        let id = this.id, title;
         while ((id    = services.bookmarks.getFolderIdForItem(id)) &&
                (title = services.bookmarks.getItemTitle(id)))
             res.push(title);
@@ -125,7 +125,7 @@ var BookmarkCache = Module("BookmarkCache", XPCOM(Ci.nsINavBookmarkObserver), {
 
     get: function (url) {
         let ids = services.bookmarks.getBookmarkIdsForURI(newURI(url), {});
-        for (let id of values(ids))
+        for (let id of ids)
             if (id in this.bookmarks)
                 return this.bookmarks[id];
         return null;

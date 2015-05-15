@@ -54,7 +54,7 @@ var updateAddons = Class("UpgradeListener", AddonListener, {
         this.remaining = addons;
         this.upgrade = [];
         this.dactyl.echomsg(_("addon.check", addons.map(a => a.name).join(", ")));
-        for (let addon of values(addons))
+        for (let addon of addons)
             addon.findUpdates(this, AddonManager.UPDATE_WHEN_USER_REQUESTED, null, null);
 
     },
@@ -371,7 +371,7 @@ var Addons = Module("addons", {
                         names: ["-types", "-type", "-t"],
                         description: "The add-on types to list",
                         default: ["extension"],
-                        completer: function (context, args) completion.addonType(context),
+                        completer: function (context) completion.addonType(context),
                         type: CommandOption.LIST
                     }
                 ]
@@ -446,7 +446,7 @@ var Addons = Module("addons", {
                             names: ["-types", "-type", "-t"],
                             description: "The add-on types to operate on",
                             default: ["extension"],
-                            completer: function (context, args) completion.addonType(context),
+                            completer: function (context) completion.addonType(context),
                             type: CommandOption.LIST
                         }
                     ]

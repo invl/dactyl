@@ -35,7 +35,7 @@ var MOW = Module("mow", {
         events.listen(window, this, "windowEvents");
 
         modules.mow = this;
-        let fontSize = DOM(document.documentElement).style.fontSize;
+        //let fontSize = DOM(document.documentElement).style.fontSize;
         styles.system.add("font-size", "dactyl://content/buffer.xhtml",
                           // "body { font-size: " + fontSize + "; } \
                           "html|html > xul|scrollbar { visibility: collapse !important; }",
@@ -95,7 +95,7 @@ var MOW = Module("mow", {
 
                 leave: stack => {
                     if (stack.pop)
-                        for (let message of values(this.messages))
+                        for (let message of this.messages)
                             if (message.leave)
                                 message.leave(stack);
                 },

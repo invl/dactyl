@@ -35,7 +35,7 @@ var Group = Class("Group", {
     modifiable: true,
 
     cleanup: function cleanup(reason) {
-        for (let hive of values(this.hives))
+        for (let hive of this.hives)
             util.trapErrors("cleanup", hive);
 
         this.hives = [];
@@ -46,7 +46,7 @@ var Group = Class("Group", {
             this.children.splice(0).forEach(this.contexts.bound.removeGroup);
     },
     destroy: function destroy(reason) {
-        for (let hive of values(this.hives))
+        for (let hive of this.hives)
             util.trapErrors("destroy", hive);
 
         if (reason != "shutdown")
@@ -154,7 +154,7 @@ var Contexts = Module("contexts", {
         },
 
         destroy: function () {
-            for (let hive of values(this.groupList.slice()))
+            for (let hive of this.groupList.slice())
                 util.trapErrors("destroy", hive, "shutdown");
 
             for (let plugin of values(this.modules.plugins.contexts)) {
@@ -706,7 +706,7 @@ var Contexts = Module("contexts", {
                         arguments: [group.name],
                         ignoreDefaults: true
                     }
-                    for (group of values(contexts.initializedGroups()))
+                    for (group of contexts.initializedGroups())
                     if (!group.builtin && group.persist)
                 ].concat([{ command: this.name, arguments: ["user"] }])
             });
@@ -769,7 +769,7 @@ var Contexts = Module("contexts", {
             });
         commands.add(["elsei[f]", "elif"],
             "Execute commands until the next :elseif, :else, or :endif only if the argument returns true",
-            function (args) {},
+            function () {},
             {
                 always: function (args) {
                     checkStack("if");
@@ -781,7 +781,7 @@ var Contexts = Module("contexts", {
             });
         commands.add(["el[se]"],
             "Execute commands until the next :endif only if the previous conditionals were not executed",
-            function (args) {},
+            function () {},
             {
                 always: function (args) {
                     checkStack("if");
@@ -792,7 +792,7 @@ var Contexts = Module("contexts", {
             });
         commands.add(["en[dif]", "fi"],
             "End a string of :if/:elseif/:else conditionals",
-            function (args) {},
+            function () {},
             {
                 always: function (args) { args.context.noExecute = pop("if"); },
                 argCount: "0"

@@ -576,7 +576,7 @@ var CommandHive = Class("CommandHive", Contexts.Hive, {
                         _("command.wontReplace", name));
         }
 
-        for (let name of values(names)) {
+        for (let name of names) {
             ex.__defineGetter__(name, function () this._run(name));
             if (name in this._map && !this._map[name].isPlaceholder)
                 this.remove(name);
@@ -587,7 +587,7 @@ var CommandHive = Class("CommandHive", Contexts.Hive, {
         memoize(this._map, name, () => commands.Command(specs, description, action, extra));
         if (!extra.hidden)
             memoize(this._list, this._list.length, closure);
-        for (let alias of values(names.slice(1)))
+        for (let alias of names.slice(1))
             memoize(this._map, alias, closure);
 
         return name;
@@ -647,7 +647,7 @@ var CommandHive = Class("CommandHive", Contexts.Hive, {
 
         let cmd = this.get(name);
         this._list = this._list.filter(c => c !== cmd);
-        for (let name of values(cmd.names))
+        for (let name of cmd.names)
             delete this._map[name];
     }
 });
@@ -660,7 +660,7 @@ var Commands = Module("commands", {
     lazyDepends: true,
 
     Local: function Local(dactyl, modules, window) {
-        let { Group, contexts } = modules;
+        let { contexts } = modules;
         return {
             init: function init() {
                 this.Command = Class("Command", Command, { modules: modules });
@@ -1408,14 +1408,17 @@ var Commands = Module("commands", {
         if (isString(sep))
             sep = RegExp(sep);
 
-        sep = sep != null ? sep : /\s/;
+        sep = (sep != null ? sep : /\s/).source;
 
-        if (sep.source == "" || sep.source == "(?:)")
+        if (sep == "(?:)")
+            sep = "";
+
+        if (sep == "" || sep == "(?:)")
             var re1 = /^(?!)/;
         else
-            re1 = RegExp("^" + sep.source);
+            re1 = RegExp("^" + sep);
 
-        let re2 = RegExp(/^()((?:[^\\S"']|\\.)+)((?:\\$)?)/.source.replace("S", sep.source));
+        let re2 = RegExp(/^()((?:[^\\S"']|\\.)+)((?:\\$)?)/.source.replace("S", sep));
 
         while (str.length && !re1.test(str)) {
             let res;
@@ -1550,10 +1553,10 @@ var Commands = Module("commands", {
         const { commands, contexts } = modules;
 
         commands.add(["(", "-("], "",
-            function (args) { dactyl.echoerr(_("dactyl.cheerUp")); },
+            function () { dactyl.echoerr(_("dactyl.cheerUp")); },
             { hidden: true });
         commands.add([")", "-)"], "",
-            function (args) { dactyl.echoerr(_("dactyl.somberDown")); },
+            function () { dactyl.echoerr(_("dactyl.somberDown")); },
             { hidden: true });
 
         commands.add(["com[mand]"],
@@ -1769,7 +1772,7 @@ var Commands = Module("commands", {
             });
     },
     javascript: function initJavascript(dactyl, modules, window) {
-        const { JavaScript, commands } = modules;
+        const { JavaScript } = modules;
 
         JavaScript.setCompleter([CommandHive.prototype.get, CommandHive.prototype.remove],
                                 [function () [[c.names, c.description] for (c of this)]]);

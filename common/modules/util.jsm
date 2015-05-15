@@ -390,7 +390,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
 
                 let quote = util.identity;
                 if (flags.has("q"))
-                    quote = function quote(obj) typeof obj === "number" ? obj : String.quote(obj);
+                    quote = function quote(obj) typeof obj === "number" ? obj : JSON.stringify(obj);
                 if (flags.has("e"))
                     quote = function quote(obj) "";
 
@@ -596,7 +596,6 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
     /**
      * Escapes quotes, newline and tab characters in *str*. The returned string
      * is delimited by *delimiter* or " if *delimiter* is not specified.
-     * {@see String#quote}.
      *
      * @param {string} str
      * @param {string} delimiter
@@ -1128,7 +1127,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
             if (~["boolean", "number"].indexOf(typeof data) || data === null)
                 res.push(String(data));
             else if (isinstance(data, ["String", _]))
-                res.push(JSON.stringify(String(data)));
+                res.push(JSON.stringify(data));
             else if (isArray(data)) {
                 if (data.length == 0)
                     res.push("[]");
@@ -1173,7 +1172,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
         "dactyl-cleanup-modules": function cleanupModules(subject, reason) {
             defineModule.loadLog.push("dactyl: util: observe: dactyl-cleanup-modules " + reason);
 
-            for (let module of values(defineModule.modules))
+            for (let module of defineModule.modules)
                 if (module.cleanup) {
                     util.dump("cleanup: " + module.constructor.className);
                     util.trapErrors(module.cleanup, module, reason);

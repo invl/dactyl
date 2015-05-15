@@ -141,7 +141,7 @@ function require_(obj, name, from, targetName) {
         return obj;
     }
     catch (e) {
-        defineModule.dump("loading " + String.quote(name + ".jsm") + "\n");
+        defineModule.dump("loading " + JSON.stringify(name + ".jsm") + "\n");
         if (loaded.util)
             util.reportError(e);
         else
@@ -291,9 +291,9 @@ function* properties(obj, prototypes) {
                     }
                     catch (e) {
                         util.reportError("Filtering properties for " +
-                                         String.quote(obj) + ", " +
+                                         JSON.stringify(obj) + ", " +
                                          "error checking presence of " +
-                                         String.quote(prop) + ": " + e);
+                                         JSON.stringify(prop) + ": " + e);
                     }
                     return false;
                 };
@@ -377,7 +377,7 @@ deprecated.warn = function warn(func, name, alternative, frame) {
  * object.
  *
  * @param {object} obj The object to inspect.
- * @returns {Generator}
+ * @returns {Iter}
  */
 function keys(obj) {
     if (isinstance(obj, ["Map"]))
@@ -392,7 +392,7 @@ function keys(obj) {
  * object.
  *
  * @param {object} obj The object to inspect.
- * @returns {Generator}
+ * @returns {Iter}
  */
 function values(obj)  {
     if (isinstance(obj, ["Map"]))
@@ -458,7 +458,7 @@ Object.defineProperty(RealSet.prototype, "union", {
 this.Set = deprecated("RealSet", function Set(ary) {
     let obj = {};
     if (ary)
-        for (let val of values(ary))
+        for (let val of ary)
             obj[val] = true;
     return obj;
 });
@@ -1528,7 +1528,7 @@ function iter(obj, iface) {
             res = Ary.iterItems(obj);
         else if (obj.constructor instanceof ctypes.StructType)
             res = (function* () {
-                for (let prop of values(obj.constructor.fields)) {
+                for (let prop of obj.constructor.fields) {
                     let [name, type] = Iterator(prop).next();
                     yield [name, obj[name]];
                 }
@@ -1849,7 +1849,7 @@ var Ary = Class("Ary", Array, {
      * given predicate.
      */
     nth: function nth(ary, pred, n, self) {
-        for (let elem of values(ary))
+        for (let elem of ary)
             if (pred.call(self, elem) && n-- === 0)
                 return elem;
         return undefined;

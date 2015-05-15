@@ -394,11 +394,14 @@ var CommandMode = Class("CommandMode", {
 
             commandline.hideCompletions();
 
+            let result = this.command;
+            commandline.saveCommand();
+
             modes.delay(function () {
                 if (!this.keepCommand || commandline.silent || commandline.quiet)
                     commandline.hide();
                 if (!waiting)
-                    this[this.accepted ? "onSubmit" : "onCancel"](commandline.command);
+                    this[this.accepted ? "onSubmit" : "onCancel"](result);
                 if (commandline.messageCount === this.messageCount)
                     commandline.clearMessage();
             }, this);
@@ -632,7 +635,7 @@ var CommandLine = Module("commandline", {
     },
 
     hideCompletions: function hideCompletions() {
-        for (let nodeSet of values([this.widgets.statusbar, this.widgets.commandbar]))
+        for (let nodeSet of [this.widgets.statusbar, this.widgets.commandbar])
             if (nodeSet.commandline.completionList)
                 nodeSet.commandline.completionList.visible = false;
     },
@@ -644,9 +647,13 @@ var CommandLine = Module("commandline", {
         set: function set_miwVisible(value) { this.widgets.multilineInput.collapsed = !value; }
     }),
 
-    get command() {
+    saveCommand: function saveCommand() {
         if (this.commandVisible && this.widgets.command)
-            return commands.lastCommand = this.widgets.command[1];
+            commands.lastCommand = this.widgets.command[1];
+    },
+
+    get command() {
+        this.saveCommand();
         return commands.lastCommand;
     },
     set command(val) {
@@ -1351,7 +1358,6 @@ var CommandLine = Module("commandline", {
                 return;
             }
 
-            let value = this.editor.selection.focusNode.textContent;
             this.saveInput();
 
             if (this.itemList.visible)
@@ -1788,8 +1794,6 @@ var CommandLine = Module("commandline", {
                  if (self.completions)
                      self.completions.tabTimer.flush();
 
-                 let command = commandline.command;
-
                  self.accepted = true;
                  return function () { modes.pop(); };
              });
@@ -2086,7 +2090,7 @@ var ItemList = Class("ItemList", {
     updateOffsets: function updateOffsets() {
         let total = this.itemCount;
         let count = 0;
-        for (let group of values(this.activeGroups)) {
+        for (let group of this.activeGroups) {
             group.offsets = { start: count, end: total - count - group.itemCount };
             count += group.itemCount;
         }
@@ -2101,7 +2105,8 @@ var ItemList = Class("ItemList", {
 
         let container = DOM(this.nodes.completions);
         let groups = this.activeGroups;
-        for (let group of values(groups)) {
+
+        for (let group of groups) {
             group.reset();
             container.append(group.nodes.root);
         }
@@ -2144,7 +2149,7 @@ var ItemList = Class("ItemList", {
      * @private
      */
     draw: function draw() {
-        for (let group of values(this.activeGroups))
+        for (let group of this.activeGroups)
             group.draw();
 
         // We need to collect all of the rescrolling functions in

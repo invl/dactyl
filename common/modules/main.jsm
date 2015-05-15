@@ -125,8 +125,16 @@ var Modules = function Modules(window) {
             return p;
         },
 
-        set: function window_set(target, prop, val) {
-            return target[prop] = val;
+        set: function window_set(target, prop, val, receiver) {
+            if (receiver !== target)
+                Object.defineProperty(receiver, prop, {
+                    value: val,
+                    enumerable: true, configurable: true, writable: true
+                });
+            else
+                target[prop] = val;
+
+            return true;
         }
     });
 
@@ -209,7 +217,7 @@ overlay.overlayWindow(Object.keys(config.overlays),
     load: function onLoad(document) {
         let self = this;
 
-        var { modules, Module } = this.modules;
+        var { modules } = this.modules;
         delete window.dactyl;
 
         this.startTime = Date.now();
@@ -249,7 +257,9 @@ overlay.overlayWindow(Object.keys(config.overlays),
     cleanup: function cleanup(window) {
         overlay.windows.delete(window);
 
-        Cu.nukeSandbox(this.jsmodules);
+        JSMLoader.atexit(() => {
+            Cu.nukeSandbox(this.jsmodules);
+        });
     },
 
     unload: function unload(window) {
@@ -288,7 +298,7 @@ overlay.overlayWindow(Object.keys(config.overlays),
             if (seen.add(module.className))
                 throw Error("Module dependency loop.");
 
-            for (let dep of values(module.requires))
+            for (let dep of module.requires)
                 this.loadModule(Module.constructors[dep], module.className);
 
             defineModule.loadLog.push(

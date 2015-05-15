@@ -34,7 +34,7 @@ var IO = Module("io", {
     },
 
     Local: function Local(dactyl, modules, window) {
-        let { io, plugins } = modules;
+        let { io } = modules;
         return {
 
             init: function init() {
@@ -97,7 +97,7 @@ var IO = Module("io", {
                 dactyl.echomsg(_("io.searchingFor", JSON.stringify(paths.join(" ")), modules.options.get("runtimepath").stringValue), 2);
 
             outer:
-                for (let dir of values(dirs)) {
+                for (let dir of dirs) {
                     for (let path of paths) {
                         let file = dir.child(path);
 
@@ -238,7 +238,13 @@ var IO = Module("io", {
     },
 
     validateCharset: function validateCharset(charset) {
-        new TextDecoder(charset);
+        try {
+            new TextDecoder(charset);
+            return true;
+        }
+        catch (e) {
+            return false;
+        }
     },
 
     // TODO: there seems to be no way, short of a new component, to change
@@ -627,7 +633,7 @@ var IO = Module("io", {
                 }
                 else {
                     let dirs = modules.options.get("cdpath").files;
-                    for (let dir of values(dirs)) {
+                    for (let dir of dirs) {
                         dir = dir.child(arg);
 
                         if (dir.exists() && dir.isDirectory() && dir.isReadable()) {
@@ -862,7 +868,7 @@ unlet s:cpo_save
                                   Ary(o.names for (o of options) if (o.type != "boolean")).flatten()),
                     toggleoptions: wrap("let s:toggleOptions = [",
                                         Ary(o.realNames for (o of options) if (o.type == "boolean"))
-                                            .flatten().map(String.quote),
+                                            .flatten().map(JSON.stringify),
                                         ", ") + "]"
                 }; //}}}
 
