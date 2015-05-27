@@ -31,10 +31,18 @@ update(Range.prototype, {
     contains: function (date) date == null ||
         (this.min == null || date >= this.min) && (this.max == null || date <= this.max),
 
-    get isEternity() this.max == null && this.min == null,
-    get isSession() this.max == null && this.min == sanitizer.sessionStart,
+    get isEternity() {
+        return this.max == null && this.min == null;
+    },
+    get isSession() {
+        return this.max == null && this.min == sanitizer.sessionStart;
+    },
 
-    get native() this.isEternity ? null : [this.min || 0, this.max == null ? Number.MAX_VALUE : this.max]
+    get native() {
+        return this.isEternity ? null
+                               : [this.min || 0, this.max == null ? Number.MAX_VALUE
+                                                                  : this.max];
+    }
 });
 
 var Item = Class("SanitizeItem", {
@@ -49,10 +57,14 @@ var Item = Class("SanitizeItem", {
 
     description: Messages.Localized(""),
 
-    get cpdPref() (this.builtin ? "" : Item.PREFIX) + Item.BRANCH + Sanitizer.argToPref(this.name),
-    get shutdownPref() (this.builtin ? "" : Item.PREFIX) + Item.SHUTDOWN_BRANCH + Sanitizer.argToPref(this.name),
-    get cpd() prefs.get(this.cpdPref),
-    get shutdown() prefs.get(this.shutdownPref),
+    get cpdPref() {
+        return (this.builtin ? "" : Item.PREFIX) + Item.BRANCH + Sanitizer.argToPref(this.name);
+    },
+    get shutdownPref() {
+        return (this.builtin ? "" : Item.PREFIX) + Item.SHUTDOWN_BRANCH + Sanitizer.argToPref(this.name);
+    },
+    get cpd() { return prefs.get(this.cpdPref); },
+    get shutdown() { return prefs.get(this.shutdownPref); },
 
     shouldSanitize: function (shutdown) (!shutdown || this.builtin || this.persistent) &&
         prefs.get(shutdown ? this.shutdownPref : this.pref)
@@ -162,10 +174,12 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
             override: true
         });
 
-        function ourItems(persistent) [
-            item for (item of values(self.itemMap))
-            if (!item.builtin && (!persistent || item.persistent) && item.name !== "all")
-        ];
+        function ourItems(persistent) {
+            return [
+                item for (item of values(self.itemMap))
+                if (!item.builtin && (!persistent || item.persistent) && item.name !== "all")
+            ];
+        }
 
         function prefOverlay(branch, persistent, local) {
             return update(Object.create(local),
@@ -191,7 +205,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                 let branch = Item.PREFIX + Item.SHUTDOWN_BRANCH;
 
                 overlay.overlayWindow("chrome://browser/content/preferences/sanitize.xul",
-                                      function (win) {
+                                      win => {
                     let items = ourItems(true);
 
                     return prefOverlay(branch, true, {
@@ -292,7 +306,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
         "quit-application-granted": function (subject, data) {
             if (this.runAtShutdown && !this.sanitizeItems(null, Range(), null, "shutdown"))
                 this.ranAtShutdown = true;
-        },
+        }
     },
 
     /**
@@ -315,10 +329,18 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
         return thing.QueryInterface(Ci.nsILoadContext);
     },
 
-    get ranAtShutdown()    config.prefs.get("didSanitizeOnShutdown"),
-    set ranAtShutdown(val) config.prefs.set("didSanitizeOnShutdown", Boolean(val)),
-    get runAtShutdown()    prefs.get("privacy.sanitize.sanitizeOnShutdown"),
-    set runAtShutdown(val) prefs.set("privacy.sanitize.sanitizeOnShutdown", Boolean(val)),
+    get ranAtShutdown() {
+        return config.prefs.get("didSanitizeOnShutdown");
+    },
+    set ranAtShutdown(val) {
+        config.prefs.set("didSanitizeOnShutdown", Boolean(val));
+    },
+    get runAtShutdown() {
+        return prefs.get("privacy.sanitize.sanitizeOnShutdown");
+    },
+    set runAtShutdown(val) {
+        prefs.set("privacy.sanitize.sanitizeOnShutdown", Boolean(val));
+    },
 
     sanitize: function sanitize(items, range)
         this.withSavedValues(["sanitizing"], function () {
@@ -470,7 +492,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     && !args["-host"])
 
                     modules.commandline.input(_("sanitize.prompt.deleteAll") + " ",
-                        function (resp) {
+                        resp => {
                             if (resp.match(/^y(es)?$/i)) {
                                 sanitize(items);
                                 dactyl.echomsg(_("command.sanitize.allDeleted"));
@@ -582,7 +604,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                             context.completions = Sanitizer.COMMANDS;
                             break;
                         }
-                    },
+                    }
                 });
     },
     completion: function initCompletion(dactyl, modules, window) {
@@ -605,7 +627,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
             "The default list of private items to sanitize",
             "stringlist", "all",
             {
-                get values() values(sanitizer.itemMap).toArray(),
+                get values() { return values(sanitizer.itemMap).toArray(); },
 
                 completer: function completer(context, extra) {
                     if (context.filter[0] == "!")
@@ -628,7 +650,11 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
             "stringlist", "",
             {
                 initialValue: true,
-                get values() [i for (i of values(sanitizer.itemMap)) if (i.persistent || i.builtin)],
+                get values() {
+                    return [i
+                            for (i of values(sanitizer.itemMap))
+                            if (i.persistent || i.builtin)];
+                },
                 getter: function () !sanitizer.runAtShutdown ? [] : [
                     item.name for (item of values(sanitizer.itemMap))
                     if (item.shouldSanitize(true))
@@ -669,7 +695,7 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
         options.add(["cookies", "ck"],
             "The default mode for newly added cookie permissions",
             "stringlist", "session",
-            { get values() Sanitizer.COMMANDS });
+            { get values() { return Sanitizer.COMMANDS; }});
 
         options.add(["cookieaccept", "ca"],
             "When to accept cookies",

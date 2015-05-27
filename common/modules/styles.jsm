@@ -40,9 +40,12 @@ update(Sheet.prototype, {
 
     remove: function () { this.hive.remove(this); },
 
-    get uri() "dactyl://style/" + this.id + "/" + this.hive.name + "/" + (this.name || ""),
+    get uri() {
+        return "dactyl://style/" + this.id + "/" +
+            this.hive.name + "/" + (this.name || "");
+    },
 
-    get enabled() this._enabled,
+    get enabled() { return this._enabled; },
     set enabled(on) {
         if (on != this._enabled || this.fullCSS != this._fullCSS) {
             if (on)
@@ -94,7 +97,7 @@ var Hive = Class("Hive", {
         this.persist = persist;
     },
 
-    get modifiable() this.name !== "system",
+    get modifiable() { return this.name !== "system"; },
 
     addRef: function (obj) {
         this.refs.push(util.weakReference(obj));
@@ -118,9 +121,11 @@ var Hive = Class("Hive", {
 
     "@@iterator": function () iter(this.sheets),
 
-    get sites() Ary(this.sheets).map(s => s.sites)
-                                .flatten()
-                                .uniq().array,
+    get sites() {
+        return Ary(this.sheets).map(s => s.sites)
+                               .flatten()
+                               .uniq().array;
+    },
 
     /**
      * Add a new style sheet.
@@ -244,7 +249,7 @@ var Hive = Class("Hive", {
         }
         this.sheets = this.sheets.filter(s => matches.indexOf(s) == -1);
         return matches.length;
-    },
+    }
 });
 
 /**
@@ -374,7 +379,7 @@ var Styles = Module("Styles", {
         let type = services.stylesheet[agent ? "AGENT_SHEET" : "USER_SHEET"];
         if (services.stylesheet.sheetRegistered(uri, type))
             services.stylesheet.unregisterSheet(uri, type);
-    },
+    }
 }, {
     append: function (dest, src, sort) {
         let props = {};
@@ -394,7 +399,7 @@ var Styles = Module("Styles", {
     completeSite: function (context, content, group=styles.user) {
         context.anchored = false;
         try {
-            context.fork("current", 0, this, function (context) {
+            context.fork("current", 0, this, context => {
                 context.title = ["Current Site"];
                 context.completions = [
                     [content.location.host, /*L*/"Current Host"],
@@ -456,7 +461,7 @@ var Styles = Module("Styles", {
     splitContext: function splitContext(context, title) {
         for (let item of iter({ Active: true, Inactive: false })) {
             let [name, active] = item;
-            context.split(name, null, function (context) {
+            context.split(name, null, context => {
                 context.title[0] = /*L*/name + " " + (title || "Sheets");
                 context.filters.push(item => !!item.active == active);
             });
@@ -503,7 +508,8 @@ var Styles = Module("Styles", {
         }),
 
     patterns: memoize({
-        get property() util.regexp(literal(function () /*
+        get property() {
+            return util.regexp(literal(function () /*
                 (?:
                     (?P<preSpace> <space>*)
                     (?P<name> [-a-z]*)
@@ -514,36 +520,43 @@ var Styles = Module("Styles", {
                     )?
                 )
                 (?P<postSpace> <space>* (?: ; | $) )
-            */$), "gix", this),
+            */$), "gix", this);
+        },
 
-        get function() util.regexp(literal(function () /*
+        get function() {
+            return util.regexp(literal(function () /*
                 (?P<function>
                     \s* \( \s*
                         (?: <string> | [^)]*  )
                     \s* (?: \) | $)
                 )
-            */$), "gx", this),
+            */$), "gx", this);
+        },
 
         space: /(?: \s | \/\* .*? \*\/ )/,
 
-        get string() util.regexp(literal(function () /*
+        get string() {
+            return util.regexp(literal(function () /*
                 (?P<string>
                     " (?:[^\\"]|\\.)* (?:"|$) |
                     ' (?:[^\\']|\\.)* (?:'|$)
                 )
-            */$), "gx", this),
+            */$), "gx", this);
+        },
 
-        get token() util.regexp(literal(function () /*
-            (?P<token>
-                (?P<word> [-\w]+)
-                <function>?
-                \s*
-                | (?P<important> !important\b)
-                | \s* <string> \s*
-                | <space>+
-                | [^;}\s]+
-            )
-        */$), "gix", this)
+        get token() {
+            return util.regexp(literal(function () /*
+                (?P<token>
+                    (?P<word> [-\w]+)
+                    <function>?
+                    \s*
+                    | (?P<important> !important\b)
+                    | \s* <string> \s*
+                    | <space>+
+                    | [^;}\s]+
+                )
+            */$), "gix", this);
+        }
     }),
 
     /**
@@ -554,7 +567,7 @@ var Styles = Module("Styles", {
      */
     quote: function quote(str) {
         return '"' + str.replace(/([\\"])/g, "\\$1").replace(/\n/g, "\\00000a") + '"';
-    },
+    }
 }, {
     commands: function initCommands(dactyl, modules, window) {
         const { commands, contexts, styles } = modules;
@@ -570,16 +583,18 @@ var Styles = Module("Styles", {
             Styles.splitContext(context);
         }
 
-        function nameFlag(filter) ({
-            names: ["-name", "-n"],
-            description: "The name of this stylesheet",
-            type: modules.CommandOption.STRING,
-            completer: function (context, args) {
-                context.keys.text = sheet => sheet.name;
-                context.filters.unshift(({ item }) => item.name);
-                sheets(context, args, filter);
-            }
-        });
+        function nameFlag(filter) {
+            return {
+                names: ["-name", "-n"],
+                description: "The name of this stylesheet",
+                type: modules.CommandOption.STRING,
+                completer: function (context, args) {
+                    context.keys.text = sheet => sheet.name;
+                    context.filters.unshift(({ item }) => item.name);
+                    sheets(context, args, filter);
+                }
+            };
+        }
 
         commands.add(["sty[le]"],
             "Add or list user styles",
@@ -670,7 +685,7 @@ var Styles = Module("Styles", {
             {
                 name: ["dels[tyle]"],
                 desc: "Remove a user style sheet",
-                action: function (sheet) sheet.remove(),
+                action: function (sheet) sheet.remove()
             }
         ].forEach(function (cmd) {
             commands.add(cmd.name, cmd.desc,
@@ -711,9 +726,9 @@ var Styles = Module("Styles", {
                     this.hive = styles.addHive(group.name, this, this.persist);
                 },
 
-                get names() this.hive.names,
-                get sheets() this.hive.sheets,
-                get sites() this.hive.sites,
+                get names() { return this.hive.names; },
+                get sheets() { return this.hive.sheets; },
+                get sites() { return this.hive.sites; },
 
                 __noSuchMethod__: function __noSuchMethod__(meth, args) {
                     return apply(this.hive, meth, args);
@@ -726,7 +741,7 @@ var Styles = Module("Styles", {
     },
     completion: function initCompletion(dactyl, modules, window) {
         const names = Array.slice(DOM(["div"], window.document).style);
-        modules.completion.css = function (context) {
+        modules.completion.css = context => {
             context.title = ["CSS Property"];
             context.keys = { text: function (p) p + ":",
                              description: function () "" };
@@ -753,12 +768,12 @@ var Styles = Module("Styles", {
         let patterns = Styles.patterns;
 
         template.highlightCSS = function highlightCSS(css) {
-            return this.highlightRegexp(css, patterns.property, function (match) {
+            return this.highlightRegexp(css, patterns.property, match => {
                 if (!match.length)
                     return [];
                 return ["", match.preSpace, template.filter(match.name), ": ",
 
-                    template.highlightRegexp(match.value, patterns.token, function (match) {
+                    template.highlightRegexp(match.value, patterns.token, match => {
                         if (match.function)
                             return ["", template.filter(match.word),
                                 template.highlightRegexp(match.function, patterns.string,

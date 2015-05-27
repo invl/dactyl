@@ -26,9 +26,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         this._observers = {};
         util.addObserver(this);
 
-        this.commands["dactyl.restart"] = function (event) {
-            dactyl.restart();
-        };
+        this.commands["dactyl.restart"] = event => { dactyl.restart(); };
 
         styles.registerSheet("resource://dactyl-skin/dactyl.css");
 
@@ -154,7 +152,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         return items;
     },
 
-    get menuItems() this.getMenuItems(),
+    get menuItems() { return this.getMenuItems(); },
 
     // Global constants
     CURRENT_TAB: "here",
@@ -166,8 +164,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
     forcePrivate: null,
     forceTarget: null,
 
-    get forceOpen() ({ background: this.forceBackground,
-                       target: this.forceTarget }),
+    get forceOpen() {
+        return { background: this.forceBackground,
+                     target: this.forceTarget };
+    },
     set forceOpen(val) {
         for (let [k, v] of iter({ background: "forceBackground", target: "forceTarget" }))
             if (k in val)
@@ -231,7 +231,9 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
     },
 
     addUsageCommand: function (params) {
-        function keys(item) (item.names || [item.name]).concat(item.description, item.columns || []);
+        function keys(item) {
+            return (item.names || [item.name]).concat(item.description, item.columns || []);
+        }
 
         let name = commands.add(params.name, params.description,
             function (args) {
@@ -604,8 +606,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
      },
 
     /** @property {Element} The currently focused element. */
-    get focusedElement() services.focus.getFocusedElementForWindow(window, true, {}),
-    set focusedElement(elem) dactyl.focus(elem),
+    get focusedElement() {
+        return services.focus.getFocusedElementForWindow(window, true, {});
+    },
+    set focusedElement(elem) { dactyl.focus(elem); },
 
     /**
      * Returns whether this Dactyl extension supports *feature*.
@@ -850,7 +854,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                     event.preventDefault();
 
                     if (dactyl.commands[command])
-                        dactyl.withSavedValues(["forceTarget"], function () {
+                        dactyl.withSavedValues(["forceTarget"], () => {
                             if (event.ctrlKey || event.shiftKey || event.button == 1)
                                 dactyl.forceTarget = dactyl.NEW_TAB;
                             dactyl.commands[command](event);
@@ -1067,7 +1071,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
 
     pluginFiles: {},
 
-    get plugins() plugins,
+    get plugins() { return plugins; },
 
     setNodeVisible: function setNodeVisible(node, visible) {
         if (window.setToolbarVisibility && node.localName == "toolbar")
@@ -1116,7 +1120,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         services.appStartup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
     },
 
-    get assert() util.assert,
+    get assert() { return util.assert; },
 
     /**
      * Traps errors in the called function, possibly reporting them.
@@ -1197,7 +1201,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         let saved = save.map(p => dactyl[p]);
         return function wrappedCallback() {
             let args = arguments;
-            return dactyl.withSavedValues(save, function () {
+            return dactyl.withSavedValues(save, () => {
                 saved.forEach((p, i) => { dactyl[save[i]] = p; });
                 try {
                     return callback.apply(self, args);
@@ -1213,14 +1217,14 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
      * @property {[Window]} Returns an array of all the host application's
      *     open windows.
      */
-    get windows() [w for (w of overlay.windows)]
+    get windows() { return [w for (w of overlay.windows)]; }
 
 }, {
     toolbarHidden: function toolbarHidden(elem) "true" == (elem.getAttribute("autohide") ||
                                                            elem.getAttribute("collapsed"))
 }, {
     cache: function initCache() {
-        cache.register("help/plugins.xml", function () {
+        cache.register("help/plugins.xml", () => {
             // Process plugin help entries.
 
             let body = [];
@@ -1266,7 +1270,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                            body]);
         }, true);
 
-        cache.register("help/index.xml", function () {
+        cache.register("help/index.xml", () => {
             return '<?xml version="1.0"?>\n' +
                    DOM.toXML(["overlay", { xmlns: "dactyl" },
                        template.map(iter(dactyl.indices),
@@ -1276,7 +1280,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                            "\n\n")]);
         }, true);
 
-        cache.register("help/gui.xml", function () {
+        cache.register("help/gui.xml", () => {
             return '<?xml version="1.0"?>\n' +
                    DOM.toXML(["overlay", { xmlns: "dactyl" },
                        ["dl", { insertafter: "dialog-list" },
@@ -1289,7 +1293,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                                "\n")]]);
         }, true);
 
-        cache.register("help/privacy.xml", function () {
+        cache.register("help/privacy.xml", () => {
             return '<?xml version="1.0"?>\n' +
                    DOM.toXML(["overlay", { xmlns: "dactyl" },
                        ["dl", { insertafter: "sanitize-items" },
@@ -1647,7 +1651,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 if (args["+purgecaches"])
                     cache.flush();
 
-                util.delay(() => { util.rehash(args) });
+                util.delay(() => { util.rehash(args); });
             },
             {
                 argCount: "0", // FIXME
@@ -1667,10 +1671,12 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 options: startupOptions
             });
 
-        function findToolbar(name) DOM.XPath(
-            "//*[@toolbarname=" + util.escapeString(name, "'") + " or " +
-                "@toolbarname=" + util.escapeString(name.trim(), "'") + "]",
-            document).snapshotItem(0);
+        function findToolbar(name) {
+            return DOM.XPath(
+                "//*[@toolbarname=" + util.escapeString(name, "'") + " or " +
+                    "@toolbarname=" + util.escapeString(name.trim(), "'") + "]",
+                document).snapshotItem(0);
+        }
 
         var toolbox = document.getElementById("navigator-toolbox");
         if (toolbox) {
@@ -1890,7 +1896,8 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 && root._lightweightTheme._lastScreenWidth == null) {
 
             dactyl.withSavedValues.call(PrivateBrowsingUtils,
-                                        ["isWindowPrivate"], function () {
+                                        ["isWindowPrivate"],
+                                        () => {
                 PrivateBrowsingUtils.isWindowPrivate = () => false;
                 Cu.import("resource://gre/modules/LightweightThemeConsumer.jsm", {})
                   .LightweightThemeConsumer.call(root._lightweightTheme, document);

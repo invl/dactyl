@@ -47,7 +47,7 @@ var CommandWidgets = Class("CommandWidgets", {
                     ["hbox", { id: s + "commandline", hidden: "false", class: "dactyl-container", highlight: "Normal StatusNormal", collapsed: "true" },
                         ["label", { id: s + "commandline-prompt",    class: "dactyl-commandline-prompt  plain", flex: "0", crop: "end", value: "", collapsed: "true" }],
                         ["textbox", { id: s + "commandline-command", class: "dactyl-commandline-command plain", flex: "1", type: "text", timeout: "100",
-                                      highlight: "Events",  }]]]],
+                                      highlight: "Events"  }]]]],
 
             before: [
                 ["toolbar", { id: statusline.statusBar.id, xmlns: "xul" },
@@ -165,7 +165,9 @@ var CommandWidgets = Class("CommandWidgets", {
         const self = this;
         this.elements[obj.name] = obj;
 
-        function get(prefix, map, id) (obj.getElement || util.identity)(map[id] || document.getElementById(prefix + id));
+        function get(prefix, map, id) {
+            return (obj.getElement || util.identity)(map[id] || document.getElementById(prefix + id));
+        }
 
         this.active.__defineGetter__(obj.name, () => this.activeGroup[obj.name][obj.name]);
         this.activeGroup.__defineGetter__(obj.name, () => this.getGroup(obj.name));
@@ -269,8 +271,8 @@ var CommandWidgets = Class("CommandWidgets", {
 
     active: Class.Memoize(Object),
     activeGroup: Class.Memoize(Object),
-    commandbar: Class.Memoize(function () ({ group: "Cmd" })),
-    statusbar: Class.Memoize(function ()  ({ group: "Status" })),
+    commandbar: Class.Memoize(() => ({ group: "Cmd" })),
+    statusbar: Class.Memoize(() =>  ({ group: "Status" })),
 
     _ready: function _ready(elem) {
         return elem.contentDocument.documentURI === elem.getAttribute("src") &&
@@ -322,12 +324,12 @@ var CommandMode = Class("CommandMode", {
         this.keepCommand = userContext.hidden_option_command_afterimage;
     },
 
-    get autocomplete() options["autocomplete"].length,
+    get autocomplete() { return options["autocomplete"].length; },
 
-    get command() this.widgets.command[1],
-    set command(val) this.widgets.command = val,
+    get command() { return this.widgets.command[1]; },
+    set command(val) { this.widgets.command = val; },
 
-    get prompt() this._open ? this.widgets.prompt : this._prompt,
+    get prompt() { return this._open ? this.widgets.prompt : this._prompt; },
     set prompt(val) {
         if (this._open)
             this.widgets.prompt = val;
@@ -360,13 +362,13 @@ var CommandMode = Class("CommandMode", {
             this.completions.autocompleteTimer.flush(true);
     },
 
-    get active() this === commandline.commandSession,
+    get active() { return this === commandline.commandSession; },
 
-    get holdFocus() this.widgets.active.command.inputField,
+    get holdFocus() { return this.widgets.active.command.inputField; },
 
-    get mappingSelf() this,
+    get mappingSelf() { return this; },
 
-    get widgets() commandline.widgets,
+    get widgets() { return commandline.widgets; },
 
     enter: function CM_enter(stack) {
         commandline.commandSession = this;
@@ -446,12 +448,12 @@ var CommandMode = Class("CommandMode", {
             this.completions.clear();
         if (this.history)
             this.history.reset();
-    },
+    }
 });
 
 var CommandExMode = Class("CommandExMode", CommandMode, {
 
-    get mode() modes.EX,
+    get mode() { return modes.EX; },
 
     historyKey: "command",
 
@@ -490,7 +492,7 @@ var CommandPromptMode = Class("CommandPromptMode", CommandMode, {
             context.forkapply("prompt", 0, this, "completer", args);
     },
 
-    get mode() modes.PROMPT
+    get mode() { return modes.PROMPT; }
 });
 
 /**
@@ -503,7 +505,7 @@ var CommandLine = Module("commandline", {
     init: function init() {
         this._callbacks = {};
 
-        memoize(this, "_store", function () storage.newMap("command-history", { store: true, privateData: true }));
+        memoize(this, "_store", () => storage.newMap("command-history", { store: true, privateData: true }));
 
         for (let name of ["command", "search"])
             if (storage.exists("history-" + name)) {
@@ -526,7 +528,7 @@ var CommandLine = Module("commandline", {
                 return this._messages;
             },
 
-            get length() this._messages.length,
+            get length() { return this._messages.length; },
 
             clear: function clear() {
                 this._messages = [];
@@ -561,7 +563,7 @@ var CommandLine = Module("commandline", {
      *
      * @returns {boolean}
      */
-    get commandVisible() !!this.commandSession,
+    get commandVisible() { return !!this.commandSession; },
 
     /**
      * Ensure that the multiline input widget is the correct size.
@@ -589,17 +591,17 @@ var CommandLine = Module("commandline", {
     APPEND_TO_MESSAGES : 1 << 3, // Add the string to the message history.
     ACTIVE_WINDOW      : 1 << 4, // Only echo in active window.
 
-    get completionContext() this._completions.context,
+    get completionContext() { return this._completions.context; },
 
     _silent: false,
-    get silent() this._silent,
+    get silent() { return this._silent; },
     set silent(val) {
         this._silent = val;
         this.quiet = this.quiet;
     },
 
     _quite: false,
-    get quiet() this._quiet,
+    get quiet() { return this._quiet; },
     set quiet(val) {
         this._quiet = val;
         ["commandbar", "statusbar"].forEach(function (nodeSet) {
@@ -734,7 +736,7 @@ var CommandLine = Module("commandline", {
     },
 
     _hiddenMessages: 0,
-    get hiddenMessages() this._hiddenMessages,
+    get hiddenMessages() { return this._hiddenMessages; },
     set hiddenMessages(val) {
         this._hiddenMessages = val;
         if (val)
@@ -776,14 +778,14 @@ var CommandLine = Module("commandline", {
 
         highlightGroup = highlightGroup || this.HL_NORMAL;
 
-        let appendToMessages = (data) => {
+        let appendToMessages = data => {
             let message = isObject(data) && !DOM.isJSONXML(data) ? data : { message: data };
 
             // Make sure the memoized message property is an instance property.
             message.message;
             this._messageHistory.add(update({ highlight: highlightGroup }, message));
             return message.message;
-        }
+        };
 
         if (flags & this.APPEND_TO_MESSAGES)
             data = appendToMessages(data);
@@ -915,7 +917,10 @@ var CommandLine = Module("commandline", {
         });
     },
 
-    get commandMode() this.commandSession && isinstance(modes.main, modes.COMMAND_LINE),
+    get commandMode() {
+        return this.commandSession &&
+               isinstance(modes.main, modes.COMMAND_LINE);
+    },
 
     events: update(
         iter(CommandMode.prototype.events).map(
@@ -936,7 +941,7 @@ var CommandLine = Module("commandline", {
         }
     ),
 
-    get mowEvents() mow.events,
+    get mowEvents() { return mow.events; },
 
     /**
      * Multiline input events, they will come straight from
@@ -987,7 +992,7 @@ var CommandLine = Module("commandline", {
             this.reset();
             this.session = session;
         },
-        get store() commandline._store.get(this.mode, []),
+        get store() { return commandline._store.get(this.mode, []); },
         set store(ary) { commandline._store.set(this.mode, ary); },
         /**
          * Reset the history index to the first entry.
@@ -1163,8 +1168,10 @@ var CommandLine = Module("commandline", {
             this.tabTimer.tell(event);
         },
 
-        get activeContexts() this.context.contextList
-                                 .filter(c => c.items.length || c.incomplete),
+        get activeContexts() {
+            return this.context.contextList
+                       .filter(c => c.items.length || c.incomplete);
+        },
 
         /**
          * Returns the current completion string relative to the
@@ -1224,7 +1231,7 @@ var CommandLine = Module("commandline", {
                  + this.originalValue.substr(this.originalCaret);
         },
 
-        get selected() this.itemList.selected,
+        get selected() { return this.itemList.selected; },
         set selected(tuple) {
             if (!Ary.equals(tuple || [],
                             this.itemList.selected || []))
@@ -1238,18 +1245,20 @@ var CommandLine = Module("commandline", {
             }
         },
 
-        get caret() this.editor.selection.getRangeAt(0).startOffset,
+        get caret() {
+            return this.editor.selection.getRangeAt(0).startOffset;
+        },
         set caret(offset) {
             this.editor.selection.collapse(this.editor.rootElement.firstChild, offset);
         },
 
-        get start() this.context.allItems.start,
+        get start() { return this.context.allItems.start; },
 
-        get items() this.context.allItems.items,
+        get items() { return this.context.allItems.items; },
 
-        get substring() this.context.longestAllSubstring,
+        get substring() { return this.context.longestAllSubstring; },
 
-        get wildtype() this.wildtypes[this.wildIndex] || "",
+        get wildtype() { return this.wildtypes[this.wildIndex] || ""; },
 
         /**
          * Cleanup resources used by this completion session. This
@@ -1724,7 +1733,7 @@ var CommandLine = Module("commandline", {
             description: "Active when the command line is focused",
             insert: true,
             ownsFocus: true,
-            get mappingSelf() commandline.commandSession
+            get mappingSelf() { return commandline.commandSession; }
         });
         // this._extended modes, can include multiple modes, and even main modes
         modes.addMode("EX", {
@@ -1795,7 +1804,7 @@ var CommandLine = Module("commandline", {
                      self.completions.tabTimer.flush();
 
                  self.accepted = true;
-                 return function () { modes.pop(); };
+                 return () => { modes.pop(); };
              });
 
         [
@@ -1959,28 +1968,33 @@ var ItemList = Class("ItemList", {
         DOM(this.win).resize(this._onResize.bound.tell);
     },
 
-    get rootXML()
-        ["div", { highlight: "Normal", style: "white-space: nowrap", key: "root" },
-            ["div", { key: "wrapper" },
-                ["div", { highlight: "Completions", key: "noCompletions" },
-                    ["span", { highlight: "Title" },
-                        _("completion.noCompletions")]],
-                ["div", { key: "completions" }]],
+    get rootXML() {
+        return ["div", { highlight: "Normal", style: "white-space: nowrap", key: "root" },
+                   ["div", { key: "wrapper" },
+                       ["div", { highlight: "Completions", key: "noCompletions" },
+                           ["span", { highlight: "Title" },
+                               _("completion.noCompletions")]],
+                       ["div", { key: "completions" }]],
 
-            ["div", { highlight: "Completions" },
-                template.map(util.range(0, options["maxitems"] * 2), i =>
-                    ["div", { highlight: "CompItem NonText" },
-                        "~"])]],
+                   ["div", { highlight: "Completions" },
+                       template.map(util.range(0, options["maxitems"] * 2), i =>
+                           ["div", { highlight: "CompItem NonText" },
+                               "~"])]];
+    },
 
-    get itemCount() this.context.contextList
-                        .reduce((acc, ctxt) => acc + ctxt.items.length, 0),
+    get itemCount() {
+        return this.context.contextList
+                   .reduce((acc, ctxt) => acc + ctxt.items.length, 0);
+    },
 
-    get visible() !this.container.collapsed,
-    set visible(val) this.container.collapsed = !val,
+    get visible() { return !this.container.collapsed; },
+    set visible(val) { this.container.collapsed = !val; },
 
-    get activeGroups() this.context.contextList
-                           .filter(c => c.items.length || c.message || c.incomplete)
-                           .map(this.getGroup, this),
+    get activeGroups() {
+        return this.context.contextList
+                   .filter(c => c.items.length || c.message || c.incomplete)
+                   .map(this.getGroup, this);
+    },
 
     get selected() {
         let g = this.selectedGroup;
@@ -2305,26 +2319,27 @@ var ItemList = Class("ItemList", {
             this.range   = ItemList.Range(0, 0);
         },
 
-        get rootXML()
-            ["div", { key: "root", highlight: "CompGroup" },
-                ["div", { highlight: "Completions" },
-                    this.context.createRow(this.context.title || [], "CompTitle")],
-                ["div", { highlight: "CompTitleSep" }],
-                ["div", { key: "contents" },
-                    ["div", { key: "up", highlight: "CompLess" }],
-                    ["div", { key: "message", highlight: "CompMsg" },
-                        this.context.message || []],
-                    ["div", { key: "itemsContainer", class: "completion-items-container" },
-                        ["div", { key: "items", highlight: "Completions" }]],
-                    ["div", { key: "waiting", highlight: "CompMsg" },
-                        ItemList.WAITING_MESSAGE],
-                    ["div", { key: "down", highlight: "CompMore" }]]],
+        get rootXML() {
+            return ["div", { key: "root", highlight: "CompGroup" },
+                       ["div", { highlight: "Completions" },
+                           this.context.createRow(this.context.title || [], "CompTitle")],
+                       ["div", { highlight: "CompTitleSep" }],
+                       ["div", { key: "contents" },
+                           ["div", { key: "up", highlight: "CompLess" }],
+                           ["div", { key: "message", highlight: "CompMsg" },
+                               this.context.message || []],
+                           ["div", { key: "itemsContainer", class: "completion-items-container" },
+                               ["div", { key: "items", highlight: "Completions" }]],
+                           ["div", { key: "waiting", highlight: "CompMsg" },
+                               ItemList.WAITING_MESSAGE],
+                           ["div", { key: "down", highlight: "CompMore" }]]];
+        },
 
-        get doc() this.parent.doc,
-        get win() this.parent.win,
-        get maxItems() this.parent.maxItems,
+        get doc() { return this.parent.doc; },
+        get win() { return this.parent.win; },
+        get maxItems() { return this.parent.maxItems; },
 
-        get itemCount() this.context.items.length,
+        get itemCount() { return this.context.items.length; },
 
         /**
          * Returns a function which will update the scroll offsets
@@ -2345,7 +2360,7 @@ var ItemList = Class("ItemList", {
                 var scrollY = this.win.scrollY + rect.bottom - this.win.innerHeight;
             }
 
-            return function () {
+            return () => {
                 container.style.height = height + "px";
                 container.scrollTop = scroll;
                 if (scrollY != null)
@@ -2438,9 +2453,9 @@ var ItemList = Class("ItemList", {
 
         getOffset: function getOffset(idx) this.offsets.start + (idx || 0),
 
-        get selectedRow() this.getRow(this._selectedIdx),
+        get selectedRow() { return this.getRow(this._selectedIdx); },
 
-        get selectedIdx() this._selectedIdx,
+        get selectedIdx() { return this._selectedIdx; },
         set selectedIdx(idx) {
             if (this.selectedRow && this._selectedIdx != idx)
                 DOM(this.selectedRow).attr("selected", null);

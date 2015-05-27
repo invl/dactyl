@@ -90,7 +90,7 @@ var EventHive = Class("EventHive", Contexts.Hive, {
         });
     },
 
-    get wrapListener() events.bound.wrapListener
+    get wrapListener() { return events.bound.wrapListener; }
 });
 
 /**
@@ -211,7 +211,7 @@ var Events = Module("events", {
         }
     },
 
-    get listen() this.builtin.bound.listen,
+    get listen() { return this.builtin.bound.listen; },
     addSessionListener: deprecated("events.listen", { get: function addSessionListener() this.listen }),
 
     /**
@@ -248,7 +248,7 @@ var Events = Module("events", {
      * @param {string} macro The name for the macro.
      */
     _recording: null,
-    get recording() this._recording,
+    get recording() { return this._recording; },
 
     set recording(macro) {
         dactyl.assert(macro == null || /[a-zA-Z0-9]/.test(macro),
@@ -437,7 +437,11 @@ var Events = Module("events", {
         return apply(DOM.Event, "stringify", arguments);
     },
 
-    get defaultTarget() dactyl.focusedElement || content.document.body || document.documentElement,
+    get defaultTarget() {
+        return dactyl.focusedElement ||
+               content.document.body ||
+               document.documentElement;
+    },
 
     /**
      * Returns true if there's a known native key handler for the given
@@ -861,7 +865,10 @@ var Events = Module("events", {
     // access to the real focus target
     // Huh? --djk
     onFocusChange: util.wrapCallback(function onFocusChange(event) {
-        function hasHTMLDocument(win) win && win.document && win.document instanceof Ci.nsIDOMHTMLDocument
+        function hasHTMLDocument(win) {
+            return win && win.document && win.document instanceof Ci.nsIDOMHTMLDocument;
+        }
+
         if (dactyl.ignoreFocus)
             return;
 
@@ -1080,7 +1087,7 @@ var Events = Module("events", {
             function ({ keypressEvents: [event] }) {
                 dactyl.assert(event.dactylSavedEvents,
                               _("event.nothingToPass"));
-                return function () {
+                return () => {
                     events.feedevents(null, event.dactylSavedEvents,
                                       { skipmap: true, isMacro: true, isReplay: true });
                 };
@@ -1094,7 +1101,7 @@ var Events = Module("events", {
                 events._macroKeys.pop();
                 events.recording = arg;
             },
-            { get arg() !modes.recording });
+            { get arg() { return !modes.recording; }});
 
         mappings.add([modes.COMMAND],
             ["@", "<play-macro>"], "Play a macro",
@@ -1129,13 +1136,15 @@ var Events = Module("events", {
             init: function init(values, map) {
                 this.name = "passkeys:" + map;
                 this.stack = MapHive.Stack(values.map(v => Map(v[map + "Keys"])));
-                function Map(keys) ({
-                    execute: function () Events.PASS_THROUGH,
-                    keys: keys
-                });
+                function Map(keys) {
+                    return {
+                        execute: function () Events.PASS_THROUGH,
+                        keys: keys
+                    };
+                }
             },
 
-            get active() this.stack.length,
+            get active() { return this.stack.length; },
 
             get: function get(mode, key) this.stack.mappings[key],
 
@@ -1145,15 +1154,15 @@ var Events = Module("events", {
             "Pass certain keys through directly for the given URLs",
             "sitemap", "", {
                 flush: function flush() {
-                    memoize(this, "filters", function () this.value.filter(function (f) f(buffer.documentURI)));
-                    memoize(this, "pass", function () new RealSet(Ary.flatten(this.filters.map(function (f) f.keys))));
+                    memoize(this, "filters", function () this.value.filter(f => f(buffer.documentURI)));
+                    memoize(this, "pass", function () new RealSet(Ary.flatten(this.filters.map(f => f.keys))));
                     memoize(this, "commandHive", function hive() Hive(this.filters, "command"));
                     memoize(this, "inputHive", function hive() Hive(this.filters, "input"));
                 },
 
                 has: function (key) this.pass.has(key) || hasOwnProperty(this.commandHive.stack.mappings, key),
 
-                get pass() (this.flush(), this.pass),
+                get pass() { this.flush(); return this.pass; },
 
                 parse: function parse() {
                     let value = parse.superapply(this, arguments);

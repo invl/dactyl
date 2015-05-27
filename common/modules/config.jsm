@@ -25,11 +25,11 @@ lazyRequire("util", ["util"]);
 
 function AboutHandler() {}
 AboutHandler.prototype = {
-    get classDescription() "About " + config.appName + " Page",
+    get classDescription() { return "About " + config.appName + " Page"; },
 
     classID: Components.ID("81495d80-89ee-4c36-a88d-ea7c4e5ac63f"),
 
-    get contractID() services.ABOUT + config.name,
+    get contractID() { return services.ABOUT + config.name; },
 
     QueryInterface: XPCOMUtils.generateQI([Ci.nsIAboutModule]),
 
@@ -79,7 +79,7 @@ var ConfigBase = Class("ConfigBase", {
         });
     },
 
-    get prefs() localPrefs,
+    get prefs() { return localPrefs; },
 
     has: function (feature) this.features.has(feature),
 
@@ -174,10 +174,12 @@ var ConfigBase = Class("ConfigBase", {
 
         let hl = highlight.set("Find", "");
         hl.onChange = function () {
-            function hex(val) ("#" + util.regexp.iterate(/\d+/g, val)
-                                         .map(num => ("0" + Number(num).toString(16)).slice(-2))
-                                         .join("")
-                              ).slice(0, 7);
+            function hex(val) {
+                return ("#" + util.regexp.iterate(/\d+/g, val)
+                                  .map(num => ("0" + Number(num).toString(16)).slice(-2))
+                                  .join("")
+                       ).slice(0, 7);
+            }
 
             let elem = services.appShell.hiddenDOMWindow.document.createElement("div");
             elem.style.cssText = this.cssText;
@@ -192,14 +194,14 @@ var ConfigBase = Class("ConfigBase", {
         };
     },
 
-    get addonID() this.name + "@dactyl.googlecode.com",
+    get addonID() { return this.name + "@dactyl.googlecode.com"; },
 
     addon: Class.Memoize(function () {
         return (JSMLoader.bootstrap || {}).addon ||
                     AddonManager.getAddonByID(this.addonID);
     }),
 
-    get styleableChrome() Object.keys(this.overlays),
+    get styleableChrome() { return Object.keys(this.overlays); },
 
     /**
      * The current application locale.
@@ -216,7 +218,9 @@ var ConfigBase = Class("ConfigBase", {
      */
     locales: Class.Memoize(function () {
         // TODO: Merge with completion.file code.
-        function getDir(str) str.match(/^(?:.*[\/\\])?/)[0];
+        function getDir(str) {
+            return str.match(/^(?:.*[\/\\])?/)[0];
+        }
 
         let uri = "resource://dactyl-locale/";
         let jar = io.isJarURL(uri);
@@ -331,17 +335,23 @@ var ConfigBase = Class("ConfigBase", {
          * @property {string} The normalised name of the OS. This is one of
          *     "Windows", "Mac OS X" or "Unix".
          */
-        get name() this.isWindows ? "Windows" : this.isMacOSX ? "Mac OS X" : "Unix",
+         get name() {
+             return this.isWindows ? "Windows"
+                                   : this.isMacOSX ? "Mac OS X"
+                                                   : "Unix";
+         },
         /** @property {boolean} True if the OS is Windows. */
-        get isWindows() this._arch == "WINNT",
+        get isWindows() { return this._arch == "WINNT"; },
         /** @property {boolean} True if the OS is Mac OS X. */
-        get isMacOSX() this._arch == "Darwin",
+        get isMacOSX() { return this._arch == "Darwin"; },
         /** @property {boolean} True if the OS is some other *nix variant. */
-        get isUnix() !this.isWindows,
+        get isUnix() { return !this.isWindows; },
         /** @property {RegExp} A RegExp which matches illegal characters in path components. */
-        get illegalCharacters() this.isWindows ? /[<>:"/\\|?*\x00-\x1f]/g : /[\/\x00]/g,
+        get illegalCharacters() {
+            return this.isWindows ? /[<>:"/\\|?*\x00-\x1f]/g : /[\/\x00]/g;
+        },
 
-        get pathListSep() this.isWindows ? ";" : ":"
+        get pathListSep() { return this.isWindows ? ";" : ":"; }
     }),
 
     /**
@@ -403,7 +413,7 @@ var ConfigBase = Class("ConfigBase", {
             return _("dactyl.created", "@DATE@");
     }),
 
-    get fileExt() this.name.slice(0, -6),
+    get fileExt() { return this.name.slice(0, -6); },
 
     dtd: Class.Memoize(function ()
         iter(this.dtdExtra,
@@ -412,13 +422,15 @@ var ConfigBase = Class("ConfigBase", {
             .toObject()),
 
     dtdDactyl: memoize({
-        get name() config.name,
-        get home() "http://5digits.org/",
-        get apphome() this.home + this.name,
+        get name() { return config.name; },
+        get home() { return "http://5digits.org/"; },
+        get apphome() { return this.home + this.name; },
         code: "http://code.google.com/p/dactyl/",
-        get issues() this.home + "bug/" + this.name,
-        get plugins() "http://5digits.org/" + this.name + "/plugins",
-        get faq() this.home + this.name + "/faq",
+        get issues() { return this.home + "bug/" + this.name; },
+        get plugins() {
+            return "http://5digits.org/" + this.name + "/plugins";
+        },
+        get faq() { return this.home + this.name + "/faq"; },
 
         "list.mailto": Class.Memoize(() => config.name + "@googlegroups.com"),
         "list.href": Class.Memoize(() => "http://groups.google.com/group/" + config.name),
@@ -479,18 +491,18 @@ var ConfigBase = Class("ConfigBase", {
             util.overlayWindow(window, { append: append });
         },
 
-        get window() window,
+        get window() { return window; },
 
-        get document() document,
+        get document() { return document; },
 
         ids: Class.Update({
-            get commandContainer() document.documentElement.id
+            get commandContainer() { return document.documentElement.id; }
         }),
 
         browser: Class.Memoize(() => window.gBrowser),
         tabbrowser: Class.Memoize(() => window.gBrowser),
 
-        get browserModes() [modules.modes.NORMAL],
+        get browserModes() { return [modules.modes.NORMAL]; },
 
         /**
          * @property {string} The ID of the application's main XUL window.
@@ -501,7 +513,9 @@ var ConfigBase = Class("ConfigBase", {
          * @property {number} The height (px) that is available to the output
          *     window.
          */
-        get outputHeight() this.browser.mPanelContainer.boxObject.height,
+        get outputHeight() {
+            return this.browser.mPanelContainer.boxObject.height;
+        },
 
         tabStrip: Class.Memoize(function () document.getElementById("TabsToolbar") || this.tabbrowser.mTabContainer)
     }),
@@ -552,7 +566,7 @@ var ConfigBase = Class("ConfigBase", {
      * @property {string} The file extension used for command script files.
      *     This is the name string sans "dactyl".
      */
-    get fileExtension() this.name.slice(0, -6),
+    get fileExtension() { return this.name.slice(0, -6); },
 
     guioptions: {},
 

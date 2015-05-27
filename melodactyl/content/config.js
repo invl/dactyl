@@ -24,54 +24,54 @@ const Config = Module("config", ConfigBase, {
 
             // TODO: mention this to SB devs, they seem keen to provide these
             // functions to make porting from FF as simple as possible.
-            window.toJavaScriptConsole = function () {
+            window.toJavaScriptConsole = () => {
                 toOpenWindowByType("global:console", "chrome://global/content/console.xul");
             };
         },
 
         // FIXME: unless I'm seeing double in in the wee small hours gBrowser is
         // first set from getBrowser which they've deprecated in FF.
-        get browser() window.getBrowser(),
-        get tabbrowser() window.getBrowser(),
+        get browser() { return window.getBrowser(); },
+        get tabbrowser() { return window.getBrowser(); },
 
         dialogs: {
             about: ["About Songbird",
-                function () { window.openDialog("chrome://songbird/content/xul/about.xul", "_blank", "chrome,dialog,modal,centerscreen"); }],
+                () => { window.openDialog("chrome://songbird/content/xul/about.xul", "_blank", "chrome,dialog,modal,centerscreen"); }],
             addons: ["Manage Add-ons",
-                function () { window.SBOpenPreferences("paneAddons"); }],
+                () => { window.SBOpenPreferences("paneAddons"); }],
             checkupdates: ["Check for updates",
-                function () { window.checkForUpdates(); }],
+                () => { window.checkForUpdates(); }],
             cookies: ["List your cookies",
-                function () { window.toOpenWindowByType("Browser:Cookies", "chrome://browser/content/preferences/cookies.xul", "chrome,dialog=no,resizable"); }],
+                () => { window.toOpenWindowByType("Browser:Cookies", "chrome://browser/content/preferences/cookies.xul", "chrome,dialog=no,resizable"); }],
             console: ["JavaScript console",
-                function () { window.toJavaScriptConsole(); }],
+                () => { window.toJavaScriptConsole(); }],
             dominspector: ["DOM Inspector",
-                function () { window.inspectDOMDocument(window.content.document); },
+                () => { window.inspectDOMDocument(window.content.document); },
                 () => "inspectDOMDocument" in window],
             downloads: ["Manage Downloads",
-                function () { window.toOpenWindowByType("Download:Manager", "chrome://mozapps/content/downloads/downloads.xul", "chrome,dialog=no,resizable"); }],
+                () => { window.toOpenWindowByType("Download:Manager", "chrome://mozapps/content/downloads/downloads.xul", "chrome,dialog=no,resizable"); }],
             newsmartplaylist: ["Open the file selector dialog",
-                function () { window.SBNewSmartPlaylist(); }],
+                () => { window.SBNewSmartPlaylist(); }],
             openfile: ["Open the file selector dialog",
-                function () { window.SBFileOpen(); }],
+                () => { window.SBFileOpen(); }],
             pagesource: ["View page source",
-                function () { window.BrowserViewSourceOfDocument(window.content.document); }],
+                () => { window.BrowserViewSourceOfDocument(window.content.document); }],
             preferences: ["Show Songbird preferences dialog",
-                function () { window.openPreferences(); }],
+                () => { window.openPreferences(); }],
             printsetup: ["Setup the page size and orientation before printing",
-                function () { window.PrintUtils.showPageSetup(); }],
+                () => { window.PrintUtils.showPageSetup(); }],
             print: ["Show print dialog",
-                function () { window.PrintUtils.print(); }],
+                () => { window.PrintUtils.print(); }],
             saveframe: ["Save frame to disk",
-                function () { window.saveFrameDocument(); }],
+                () => { window.saveFrameDocument(); }],
             savepage: ["Save page to disk",
-                function () { window.saveDocument(window.content.document); }],
+                () => { window.saveDocument(window.content.document); }],
             searchengines: ["Manage installed search engines",
-                function () { window.openDialog("chrome://browser/content/search/engineManager.xul", "_blank", "chrome,dialog,modal,centerscreen"); }],
+                () => { window.openDialog("chrome://browser/content/search/engineManager.xul", "_blank", "chrome,dialog,modal,centerscreen"); }],
             selectionsource: ["View selection source",
-                function () { modules.buffer.viewSelectionSource(); }],
+                () => { modules.buffer.viewSelectionSource(); }],
             subscribe: ["Add a new subscription",
-                function () { window.SBSubscribe(); }]
+                () => { window.SBSubscribe(); }]
         },
 
         // TODO: clean this up
@@ -86,7 +86,10 @@ const Config = Module("config", ConfigBase, {
                     modes.pop();
         },
 
-        get isPlayerWindow() window.SBGetBrowser().mCurrentTab == window.SBGetBrowser().mediaTab,
+        get isPlayerWindow() {
+            let browser = window.SBGetBrowser();
+            return browser.mCurrentTab == browser.mediaTab;
+        },
 
         /**
          * Shows or hides the main service pane.
@@ -138,7 +141,7 @@ const Config = Module("config", ConfigBase, {
     defaults: {
         guioptions: "bCmprs",
         showtabline: 2,
-        get titlestring() config.name
+        get titlestring() { return config.name; }
     },
 
     guioptions: {
@@ -278,7 +281,7 @@ const Config = Module("config", ConfigBase, {
     completion: function initCompletion(dactyl, modules, window) {
         const completion = require("completion");
 
-        completion.displayPane = function (context) {
+        completion.displayPane = context => {
             context.title = ["Display Pane"];
             context.completions = Config.displayPanes; // FIXME: useful description etc
         };

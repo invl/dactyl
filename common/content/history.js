@@ -9,9 +9,9 @@
 var History = Module("history", {
     SORT_DEFAULT: "-date",
 
-    get format() bookmarks.format,
+    get format() { return bookmarks.format; },
 
-    get service() services.history,
+    get service() { return services.history; },
 
     get: function get(filter, maxItems, sort=this.SORT_DEFAULT) {
         if (isString(filter))
@@ -64,7 +64,7 @@ var History = Module("history", {
 
         let obj = [];
         obj.__defineGetter__("index", () => sh.index);
-        obj.__defineSetter__("index", function (val) { webNav.gotoIndex(val); });
+        obj.__defineSetter__("index", val => { webNav.gotoIndex(val); });
         obj[Symbol.iterator] = function () this.entries();
 
         for (let item of iter(sh.SHistoryEnumerator, Ci.nsISHEntry))
@@ -111,7 +111,7 @@ var History = Module("history", {
         var ctxt;
         var filter = item => true;
         if (item == "domain")
-            var filter = function (item) {
+            var filter = item => {
                 let res = item.URI.hostPort != ctxt;
                 ctxt = item.URI.hostPort;
                 return res;
@@ -310,7 +310,7 @@ var History = Module("history", {
                     jumps = jumps.locations.map(l => ({
                         __proto__: l,
                         title: buffer.title,
-                        get URI() util.newURI(this.location)
+                        get URI() { return util.newURI(this.location); }
                     }));
                 }
 
@@ -324,7 +324,7 @@ var History = Module("history", {
 
     },
     completion: function initCompletion() {
-        completion.domain = function (context) {
+        completion.domain = context => {
             context.anchored = false;
             context.compare = (a, b) => String.localeCompare(a.key, b.key);
             context.keys = { text: util.identity, description: util.identity,
@@ -354,7 +354,9 @@ var History = Module("history", {
         completion.addUrlCompleter("history", "History", completion.history);
     },
     mappings: function initMappings() {
-        function bind(...args) apply(mappings, "add", [config.browserModes].concat(args));
+        function bind(...args) {
+            return apply(mappings, "add", [config.browserModes].concat(args));
+        }
 
         bind(["<C-o>"], "Go to an older position in the jump list",
              function ({ count }) { history.stepTo(-Math.max(count, 1), true); },

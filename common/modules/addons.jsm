@@ -17,7 +17,7 @@ lazyRequire("template", ["template"]);
 
 var callResult = function callResult(method, ...args) {
     return function (result) { result[method].apply(result, args); };
-}
+};
 
 var listener = function listener(action, event)
     function addonListener(install) {
@@ -218,7 +218,7 @@ var Addon = Class("Addon", {
                 node.removeChild(node.firstChild);
 
             DOM(node).append(isArray(xml) ? xml : DOM.DOMString(xml));
-        }
+        };
 
         update("name", template.icon({ icon: this.iconURL }, this.name));
         this.nodes.version.textContent = this.version;
@@ -409,7 +409,9 @@ var Addons = Module("addons", {
         // TODO: handle extension dependencies
         values(actions).forEach(function (command) {
             let perm = command.perm && AddonManager["PERM_CAN_" + command.perm.toUpperCase()];
-            function ok(addon) (!perm || addon.permissions & perm) && (!command.filter || command.filter(addon));
+            function ok(addon) {
+                return (!perm || addon.permissions & perm) && (!command.filter || command.filter(addon));
+            }
 
             commands.add(Array.concat(command.name),
                 command.description,
@@ -431,7 +433,7 @@ var Addons = Module("addons", {
                         if (command.actions)
                             command.actions(list, this.modules);
                         else
-                            list.forEach(addon => { command.action.call(this.modules, addon, args.bang) });
+                            list.forEach(addon => { command.action.call(this.modules, addon, args.bang); });
                     }));
                 }, {
                     argCount: "?", // FIXME: should be "1"
@@ -481,9 +483,9 @@ var Addons = Module("addons", {
                 description: "description",
                 icon: "iconURL"
             };
-            context.generate = function () {
+            context.generate = () => {
                 context.incomplete = true;
-                AddonManager.getAddonsByTypes(types || ["extension"], function (addons) {
+                AddonManager.getAddonsByTypes(types || ["extension"], addons => {
                     context.incomplete = false;
                     context.completions = addons;
                 });

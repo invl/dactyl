@@ -11,7 +11,9 @@ const global = this;
 
 var { classes: Cc, interfaces: Ci, results: Cr, utils: Cu } = Components;
 
-function module(uri) Cu.import(uri, {});
+function module(uri) {
+    return Cu.import(uri, {});
+}
 
 const DEBUG = true;
 
@@ -67,15 +69,15 @@ let JSMLoader = {
 
     SANDBOX: Cu.nukeSandbox,
 
-    get addon() addon,
+    get addon() { return addon; },
 
     currentModule: null,
 
     factories: [],
 
-    get name() name,
+    get name() { return name; },
 
-    get module() moduleName,
+    get module() { return moduleName; },
 
     globals: {},
     modules: {},
@@ -190,7 +192,7 @@ let JSMLoader = {
     },
 
     // Cuts down on stupid, fscking url mangling.
-    get loadSubScript() bootstrap_jsm.loadSubScript,
+    get loadSubScript() { return bootstrap_jsm.loadSubScript; },
 
     cleanup: function cleanup() {
         for (let factory of this.factories.splice(0))
@@ -316,7 +318,9 @@ function init() {
  * Performs necessary migrations after a version change.
  */
 function updateVersion() {
-    function isDev(ver) /^hg|pre$/.test(ver);
+    function isDev(ver) {
+        return /^hg|pre$/.test(ver);
+    }
     try {
         if (typeof require === "undefined" || addon === addonData)
             return;
@@ -353,7 +357,7 @@ function startup(data, reason) {
         addonData = data;
         addon = data;
         name = data.id.replace(/@.*/, "");
-        AddonManager.getAddonByID(addon.id, function (a) {
+        AddonManager.getAddonByID(addon.id, a => {
             addon = a;
 
             updateVersion();

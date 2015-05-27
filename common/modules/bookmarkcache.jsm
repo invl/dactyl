@@ -24,12 +24,14 @@ var Bookmark = Struct("url", "title", "icon", "post", "keyword", "tags", "charse
 var Keyword = Struct("keyword", "title", "icon", "url");
 Bookmark.defaultValue("icon", function () BookmarkCache.getFavicon(this.url));
 update(Bookmark.prototype, {
-    get extra() [
-        ["keyword", this.keyword,         "Keyword"],
-        ["tags",    this.tags.join(", "), "Tag"]
-    ].filter(item => item[1]),
+    get extra() {
+        return [
+            ["keyword", this.keyword,         "Keyword"],
+            ["tags",    this.tags.join(", "), "Tag"]
+        ].filter(item => item[1]);
+    },
 
-    get uri() newURI(this.url),
+    get uri() { return newURI(this.url); },
     set uri(uri) {
         let tags = this.tags;
         this.tags = null;
@@ -55,7 +57,7 @@ update(Bookmark.prototype, {
 
         return res.reverse();
     }
-})
+});
 Bookmark.prototype.members.uri = Bookmark.prototype.members.url;
 Bookmark.setter = function (key, func) this.prototype.__defineSetter__(key, func);
 Bookmark.setter("url", function (val) { this.uri = isString(val) ? newURI(val) : val; });

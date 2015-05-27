@@ -103,7 +103,7 @@ var Help = Module("Help", {
 
         cache.register("help.json", HelpBuilder);
 
-        cache.register("help/versions.xml", function () {
+        cache.register("help/versions.xml", () => {
             let NEWS = util.httpGet(config.addon.getResourceURI("NEWS").spec,
                                     { mimeType: "text/plain;charset=UTF-8" })
                            .responseText;
@@ -215,15 +215,15 @@ var Help = Module("Help", {
             cache.flushEntry(entry, time);
     },
 
-    get data() this._data || cache.get("help.json"),
+    get data() { return this._data || cache.get("help.json"); },
 
-    get files() this.data.files,
-    get overlays() this.data.overlays,
-    get tags() this.data.tags,
+    get files() { return this.data.files; },
+    get overlays() { return this.data.overlays; },
+    get tags() { return this.data.tags; },
 
     Local: function Local(dactyl, modules, window) ({
         init: function init() {
-            dactyl.commands["dactyl.help"] = function (event) {
+            dactyl.commands["dactyl.help"] = event => {
                 let elem = event.originalTarget;
                 modules.help.help(elem.getAttribute("tag") || elem.textContent);
             };
@@ -242,7 +242,9 @@ var Help = Module("Help", {
             let items = modules.completion._runCompleter("help", topic, null, !!consolidated).items;
             let partialMatch = null;
 
-            function format(item) item.description + "#" + encodeURIComponent(item.text);
+            function format(item) {
+                return item.description + "#" + encodeURIComponent(item.text);
+            }
 
             for (let item of items) {
                 if (item.text == topic)

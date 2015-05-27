@@ -72,16 +72,16 @@ var Option = Class("Option", {
      */
     description: Messages.Localized(""),
 
-    get helpTag() "'" + this.name + "'",
+    get helpTag() { return "'" + this.name + "'"; },
 
     initValue: function initValue() {
         util.trapErrors(() => { this.value = this.value; });
     },
 
-    get isDefault() this.stringValue === this.stringDefaultValue,
+    get isDefault() { return this.stringValue === this.stringDefaultValue; },
 
     /** @property {value} The value to reset this option to at cleanup time. */
-    get cleanupValue() options.cleanupPrefs.get(this.name),
+    get cleanupValue() { return options.cleanupPrefs.get(this.name); },
     set cleanupValue(value) {
         if (options.cleanupPrefs.get(this.name) == null)
             options.cleanupPrefs.set(this.name, value);
@@ -194,14 +194,14 @@ var Option = Class("Option", {
      *     or if no local value is set, this is equal to the
      *     (@link #globalValue).
      */
-    get value() this.get(),
-    set value(val) this.set(val),
+    get value() { return this.get(); },
+    set value(val) { this.set(val); },
 
-    get stringValue() this.stringify(this.value),
-    set stringValue(value) this.value = this.parse(value),
+    get stringValue() { return this.stringify(this.value); },
+    set stringValue(value) { this.value = this.parse(value); },
 
-    get stringDefaultValue() this.stringify(this.defaultValue),
-    set stringDefaultValue(val) this.defaultValue = this.parse(val),
+    get stringDefaultValue() { return this.stringify(this.defaultValue); },
+    set stringDefaultValue(val) { this.defaultValue = this.parse(val); },
 
     getKey: function getKey(key) undefined,
 
@@ -411,8 +411,11 @@ var Option = Class("Option", {
      * @property {number} Returns the timestamp when the option's value was
      *     last changed.
      */
-    get lastSet() options.store.get(this.name).time,
-    set lastSet(val) { options.store.set(this.name, { value: this.globalValue, time: Date.now() }); },
+    get lastSet() { return options.store.get(this.name).time; },
+    set lastSet(val) {
+        options.store.set(this.name,
+                          { value: this.globalValue, time: Date.now() });
+    },
 
     /**
      * @property {nsIFile} The script in which this option was last set. null
@@ -442,7 +445,7 @@ var Option = Class("Option", {
     SCOPE_BOTH: 3,
 
     has: {
-        toggleAll: function toggleAll() toggleAll.supercall(this, "all") ^ !!toggleAll.superapply(this, arguments),
+        toggleAll: function toggleAll() toggleAll.supercall(this, "all") ^ !!toggleAll.superapply(this, arguments)
     },
 
     parseRegexp: function parseRegexp(value, result, flags) {
@@ -480,13 +483,13 @@ var Option = Class("Option", {
             filter: filter,
             result: result !== undefined ? result : !bang,
             toString: function toString() this.bang + Option.quote(this.filter, /:/) +
-                (typeof this.result === "boolean" ? "" : ":" + quote(this.result)),
+                (typeof this.result === "boolean" ? "" : ":" + quote(this.result))
         });
     },
 
     getKey: {
         stringlist: function stringlist(k) this.value.indexOf(k) >= 0,
-        get charlist() this.stringlist,
+        get charlist() { return this.stringlist; },
 
         regexplist: function regexplist(k, default_=null) {
             for (let re of this.value)
@@ -494,14 +497,14 @@ var Option = Class("Option", {
                     return re.result;
             return default_;
         },
-        get regexpmap() this.regexplist,
-        get sitelist() this.regexplist,
-        get sitemap() this.regexplist
+        get regexpmap() { return this.regexplist; },
+        get sitelist() { return this.regexplist; },
+        get sitemap() { return this.regexplist; }
     },
 
     domains: {
         sitelist: function (vals) Ary.compact(vals.map(site => util.getHost(site.filter))),
-        get sitemap() this.sitelist
+        get sitemap() { return this.sitelist; }
     },
 
     stringify: {
@@ -512,9 +515,9 @@ var Option = Class("Option", {
         stringmap:   function (vals) [Option.quote(k, /:/) + ":" + Option.quote(v, /:/) for ([k, v] of iter(vals))].join(","),
 
         regexplist:  function (vals) vals.join(","),
-        get regexpmap() this.regexplist,
-        get sitelist() this.regexplist,
-        get sitemap() this.regexplist
+        get regexpmap() { return this.regexplist; },
+        get sitelist() { return this.regexplist; },
+        get sitemap() { return this.regexplist; }
     },
 
     parse: {
@@ -575,12 +578,12 @@ var Option = Class("Option", {
 
     parseKey: {
         number: Number,
-        boolean: function boolean(value) value == "true" || value == true ? true : false,
+        boolean: function boolean(value) value == "true" || value == true ? true : false
     },
 
     testValues: {
         regexpmap:  function regexpmap(vals, validator) vals.every(re => validator(re.result)),
-        get sitemap() this.regexpmap,
+        get sitemap() { return this.regexpmap; },
         stringlist: function stringlist(vals, validator) vals.every(validator, this),
         stringmap:  function stringmap(vals, validator) values(vals).every(validator, this)
     },
@@ -717,11 +720,11 @@ var Option = Class("Option", {
             }
             return null;
         },
-        get charlist() this.stringlist,
-        get regexplist() this.stringlist,
-        get regexpmap() this.stringlist,
-        get sitelist() this.stringlist,
-        get sitemap() this.stringlist
+        get charlist() { return this.stringlist; },
+        get regexplist() { return this.stringlist; },
+        get regexpmap() { return this.stringlist; },
+        get sitelist() { return this.stringlist; },
+        get sitemap() { return this.stringlist; }
     },
 
     validIf: function validIf(test, error) {
@@ -758,7 +761,7 @@ var Option = Class("Option", {
             acceptable = completions.call(this);
 
         if (isArray(acceptable))
-            acceptable = new RealSet(acceptable.map((v) => v[0]));
+            acceptable = new RealSet(acceptable.map(v => v[0]));
         else
             acceptable = new RealSet(this.parseKey(k)
                                      for (k of Object.keys(acceptable)));
@@ -964,7 +967,7 @@ var Options = Module("options", {
                 let closure = () => this._optionMap[name];
 
                 memoize(this._optionMap, name,
-                        function () Option.types[type](modules, names, description, defaultValue, extraInfo));
+                        () => Option.types[type](modules, names, description, defaultValue, extraInfo));
 
                 for (let alias of names.slice(1))
                     memoize(this._optionMap, alias, closure);
@@ -1104,7 +1107,7 @@ var Options = Module("options", {
     },
 
     /** @property {Object} The options store. */
-    get store() storage.options
+    get store() { return storage.options; }
 }, {
 }, {
     commands: function initCommands(dactyl, modules, window) {
@@ -1165,7 +1168,7 @@ var Options = Module("options", {
                     name = Option.dequote(name);
                     if (name == "all" && reset)
                         modules.commandline.input(_("pref.prompt.resetAll", config.host) + " ",
-                            function (resp) {
+                            resp => {
                                 if (resp == "yes")
                                     for (let pref of prefs.getNames())
                                         prefs.reset(pref);
@@ -1299,7 +1302,7 @@ var Options = Module("options", {
                 return null;
 
             if (!opt.value && !opt.operator && !opt.invert) {
-                context.fork("default", 0, this, function (context) {
+                context.fork("default", 0, this, context => {
                     context.title = ["Extra Completions"];
                     context.pushProcessor(0, (item, text, next) => next(item, text.substr(0, 100)));
                     context.completions = [
@@ -1322,7 +1325,7 @@ var Options = Module("options", {
 
                 context.filters.push(i => !have.has(i.text));
                 modules.completion.optionValue(context, opt.name, opt.operator, null,
-                                       function (context) {
+                                       context => {
                                            context.generate = () => option.value.map(o => [o, ""]);
                                        });
                 context.title = ["Current values"];
@@ -1337,9 +1340,11 @@ var Options = Module("options", {
             function (args) {
                 let globalVariables = dactyl._globalVariables;
                 args = (args[0] || "").trim();
-                function fmt(value) (typeof value == "number"   ? "#" :
-                                     typeof value == "function" ? "*" :
-                                                                  " ") + value;
+                function fmt(value) {
+                    return (typeof value == "number"   ? "#" :
+                            typeof value == "function" ? "*" :
+                                                         " ") + value;
+                }
                 util.assert(!(!args || args == "g:"));
 
                 let matches = args.match(/^([a-z]:)?([\w]+)(?:\s*([-+.])?=\s*(.*)?)?$/);
@@ -1537,7 +1542,7 @@ var Options = Module("options", {
             }
 
             if (extra.key && extra.value != null) {
-                context.fork("default", 0, this, function (context) {
+                context.fork("default", 0, this, context => {
                     context.completions = [
                             [val(opt.value), _("option.currentValue")],
                             [val(opt.defaultValue), _("option.defaultValue")]
@@ -1557,7 +1562,7 @@ var Options = Module("options", {
                 if (op == "-")
                     context.filters.push(i => curValues.indexOf(i.text) > -1);
 
-                memoize(extra, "values", function () {
+                memoize(extra, "values", () => {
                     if (op == "+")
                         return curValues.concat(newValues);
                     if (op == "-")

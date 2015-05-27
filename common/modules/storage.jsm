@@ -25,7 +25,7 @@ var StoreBase = Class("StoreBase", {
 
     fireEvent: function (event, arg) { storage.fireEvent(this.name, event, arg); },
 
-    get serial() JSON.stringify(this._object, this.replacer),
+    get serial() { return JSON.stringify(this._object, this.replacer); },
 
     init: function init(name, store, load, options) {
         this._load = load;
@@ -76,7 +76,7 @@ var StoreBase = Class("StoreBase", {
 var ArrayStore = Class("ArrayStore", StoreBase, {
     _constructor: Array,
 
-    get length() this._object.length,
+    get length() { return this._object.length; },
 
     set: function set(index, value, quiet) {
         var orig = this._object[index];
@@ -353,7 +353,7 @@ var Storage = Module("Storage", {
     },
 
     _privateMode: false,
-    get privateMode() this._privateMode,
+    get privateMode() { return this._privateMode; },
     set privateMode(enabled) {
         this._privateMode = Boolean(enabled);
 
@@ -376,7 +376,7 @@ var Storage = Module("Storage", {
         if (obj.privateData && obj.clone)
             return obj.clone(this);
         return obj;
-    },
+    }
 }, {
     Replacer: {
         skipXpcom: function skipXpcom(key, val) val instanceof Ci.nsISupports ? null : val
@@ -452,7 +452,7 @@ var File = Class("File", {
         return file.QueryInterface(Ci.nsILocalFile);
     }),
 
-    get async() AsyncFile(this),
+    get async() { return AsyncFile(this); },
 
     charset: Class.Memoize(() => File.defaultEncoding),
 
@@ -493,15 +493,21 @@ var File = Class("File", {
         return this.constructor(newPath, null, this.charset);
     },
 
-    get fileName() OS.Path.basename(this.path),
+    get fileName() { return OS.Path.basename(this.path); },
 
-    get parent() this.constructor(OS.Path.dirname(this.path), null, this.charset),
+    get parent() {
+        return this.constructor(OS.Path.dirname(this.path),
+                                null,
+                                this.charset);
+    },
 
     /**
      * Returns an iterator for all lines in a file.
      */
-    get lines() File.readLines(services.FileInStream(this.file, -1, 0, 0),
-                               this.charset),
+    get lines() {
+        return File.readLines(services.FileInStream(this.file, -1, 0, 0),
+                              this.charset);
+    },
 
     /**
      * Reads this file's entire contents in "text" mode and returns the
@@ -690,7 +696,7 @@ var File = Class("File", {
     /**
      * @property {string} The current platform's path separator.
      */
-    PATH_SEP: Class.Memoize(function () /foo(.)bar/.exec(OS.Path.join("foo", "bar"))[1]),
+    PATH_SEP: Class.Memoize(() => /foo(.)bar/.exec(OS.Path.join("foo", "bar"))[1]),
 
     pathSplit: Class.Memoize(function () util.regexp("[/" + util.regexp.escape(this.PATH_SEP) + "]", "g")),
 
@@ -719,17 +725,21 @@ var File = Class("File", {
      * @returns {string}
      */
     expandPath: function expandPath(path, relative) {
-        function getenv(name) services.environment.get(name);
+        function getenv(name) {
+            return services.environment.get(name);
+        }
 
         // expand any $ENV vars - this is naive but so is Vim and we like to be compatible
         // TODO: Vim does not expand variables set to an empty string (and documents it).
         // Kris reckons we shouldn't replicate this 'bug'. --djk
         // TODO: should we be doing this for all paths?
         // No.
-        function expand(path) path.replace(
-            win32 ? /\$(\w+)\b|\${(\w+)}|%(\w+)%/g
-                  : /\$(\w+)\b|\${(\w+)}/g,
-            (m, n1, n2, n3) => (getenv(n1 || n2 || n3) || m));
+        function expand(path) {
+            return path.replace(
+                win32 ? /\$(\w+)\b|\${(\w+)}|%(\w+)%/g
+                    : /\$(\w+)\b|\${(\w+)}/g,
+                (m, n1, n2, n3) => (getenv(n1 || n2 || n3) || m));
+        }
         path = expand(path);
 
         // expand ~
@@ -737,7 +747,7 @@ var File = Class("File", {
             path = OS.Path.join(OS.Constants.Path.homeDir,
                                 path.substr(2));
 
-        return OS.Path.normalize(path.replace("/", File.PATH_SEP, "g"));
+        return OS.Path.normalize(path.replace(/\//g, File.PATH_SEP));
     },
 
     expandPathList: function (list) list.map(this.expandPath),
@@ -803,7 +813,7 @@ var File = Class("File", {
             return File.DoesNotExist(e);
         }
         return path;
-    },
+    }
 });
 
 {
@@ -830,7 +840,7 @@ var File = Class("File", {
 }
 
 var AsyncFile = Class("AsyncFile", File, {
-    get async() this,
+    get async() { return this; },
 
     /*
      * Creates a new directory, along with any parent directories which
@@ -891,7 +901,7 @@ var AsyncFile = Class("AsyncFile", File, {
      */
     readDirectory: function readDirectory(callback) {
         let iter = new OS.File.DirectoryIterator(dir);
-        let close = () => { iter.close() };
+        let close = () => { iter.close(); };
 
         return iter.forEach(callback)
                    .then(close, close);
@@ -911,7 +921,7 @@ var AsyncFile = Class("AsyncFile", File, {
 
     moveTo: function moveTo(path, options) {
         return OS.File.move(this.path, path, options);
-    },
+    }
 });
 
 for (let m of ["makeDir",

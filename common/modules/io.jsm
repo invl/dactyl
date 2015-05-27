@@ -56,7 +56,7 @@ var IO = Module("io", {
 
                 historyKey: "file",
 
-                get mode() modules.modes.FILE_INPUT,
+                get mode() { return modules.modes.FILE_INPUT; },
 
                 complete: function (context) {
                     if (this.completer)
@@ -494,7 +494,7 @@ var IO = Module("io", {
         }
 
         let timer = services.Timer(
-            function () {
+            () => {
                 if (!process.isRunning) {
                     timer.cancel();
                     deferred.resolve(process.exitValue);
@@ -528,13 +528,15 @@ var IO = Module("io", {
             else if (input)
                 stdin.write(input);
 
-            function result(status, output) ({
-                __noSuchMethod__: function (meth, args) apply(this.output, meth, args),
-                valueOf: function () this.output,
-                output: output.replace(/^(.*)\n$/, "$1"),
-                returnValue: status,
-                toString: function () this.output
-            });
+            function result(status, output) {
+                return {
+                    __noSuchMethod__: function (meth, args) apply(this.output, meth, args),
+                    valueOf: function () this.output,
+                    output: output.replace(/^(.*)\n$/, "$1"),
+                    returnValue: status,
+                    toString: function () this.output
+                };
+            }
 
             function async(status) {
                 let output = stdout.read();
@@ -972,11 +974,11 @@ unlet s:cpo_save
     completion: function initCompletion(dactyl, modules, window) {
         const { completion, io } = modules;
 
-        completion.charset = function (context) {
+        completion.charset = context => {
             context.anchored = false;
             context.keys = {
                 text: util.identity,
-                description: charset => io.charsetTitle(charset),
+                description: charset => io.charsetTitle(charset)
             };
             context.completions = io.charsets;
         };
@@ -1000,7 +1002,9 @@ unlet s:cpo_save
                 context.advance(4);
 
             // dir == "" is expanded inside readDirectory to the current dir
-            function getDir(str) str.match(/^(?:.*[\/\\])?/)[0];
+            function getDir(str) {
+                return str.match(/^(?:.*[\/\\])?/)[0];
+            }
             dir = getDir(dir || context.filter);
 
             let file = util.getFile(dir);
@@ -1034,7 +1038,7 @@ unlet s:cpo_save
                               isDirectory: function () s.substr(-1) == "/",
                               leafName: /([^\/]*)\/?$/.exec(s)[1]
                         }
-                        for (s of io.listJar(uri.JARFile, getDir(uri.JAREntry)))]
+                        for (s of io.listJar(uri.JARFile, getDir(uri.JAREntry)))];
                 };
             else
                 context.generate = function generate_file() {
@@ -1058,7 +1062,7 @@ unlet s:cpo_save
 
         completion.shellCommand = function shellCommand(context) {
             context.title = ["Shell Command", "Path"];
-            context.generate = function () {
+            context.generate = () => {
                 let dirNames = services.environment.get("PATH").split(config.OS.pathListSep);
                 let commands = [];
 
@@ -1095,7 +1099,7 @@ unlet s:cpo_save
                 else if (match.scheme === "chrome") {
                     context.key = match.prefix;
                     context.advance(match.prefix.length + 1);
-                    context.generate = function () iter({
+                    context.generate = () => iter({
                         content: /*L*/"Chrome content",
                         locale: /*L*/"Locale-specific content",
                         skin: /*L*/"Theme-specific content"
@@ -1157,8 +1161,10 @@ unlet s:cpo_save
             "List of directories searched when executing :cd",
             "stringlist", ["."].concat(services.environment.get("CDPATH").split(/[:;]/).filter(util.identity)).join(","),
             {
-                get files() this.value.map(path => File(path, modules.io.cwd))
-                                .filter(dir => dir.exists()),
+                get files() {
+                    return this.value.map(path => File(path, modules.io.cwd))
+                               .filter(dir => dir.exists());
+                },
                 setter: function (value) File.expandPathList(value)
             });
 
@@ -1166,8 +1172,10 @@ unlet s:cpo_save
             "List of directories searched for runtime files",
             "stringlist", IO.runtimePath,
             {
-                get files() this.value.map(path => File(path, modules.io.cwd))
-                                .filter(dir => dir.exists())
+                get files() {
+                    return this.value.map(path => File(path, modules.io.cwd))
+                               .filter(dir => dir.exists());
+                }
             });
 
         options.add(["shell", "sh"],

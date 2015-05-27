@@ -140,13 +140,15 @@ var Command = Class("Command", {
             this.update(extraInfo);
     },
 
-    get toStringParams() [this.name, this.hive.name],
+    get toStringParams() { return [this.name, this.hive.name]; },
 
-    get identifier() this.hive.prefix + this.name,
+    get identifier() { return this.hive.prefix + this.name; },
 
-    get helpTag() ":" + this.name,
+    get helpTag() { return ":" + this.name; },
 
-    get lastCommand() this._lastCommand || this.modules.commandline.command,
+    get lastCommand() {
+        return this._lastCommand || this.modules.commandline.command;
+    },
     set lastCommand(val) { this._lastCommand = val; },
 
     /**
@@ -321,12 +323,15 @@ var Command = Class("Command", {
         let res = update([], {
                 command: this,
 
-                explicitOpts: Class.Memoize(function () ({})),
+                explicitOpts: Class.Memoize(() => ({})),
 
                 has: function AP_has(opt) hasOwnProperty(this.explicitOpts, opt)
                                        || typeof opt === "number" && hasOwnProperty(this, opt),
 
-                get literalArg() this.command.literal != null && this[this.command.literal] || "",
+                get literalArg() {
+                    let { literal } = this.command;
+                    return literal != null && this[literal] || "";
+                },
 
                 // TODO: string: Class.Memoize(function () { ... }),
 
@@ -431,8 +436,8 @@ var Command = Class("Command", {
 // Prototype.
 var Ex = Module("Ex", {
     Local: function Local(dactyl, modules, window) ({
-        get commands() modules.commands,
-        get context() modules.contexts.context
+        get commands() { return modules.commands; },
+        get context() { return modules.contexts.context; }
     }),
 
     _args: function E_args(cmd, args) {
@@ -528,7 +533,7 @@ var CommandHive = Class("CommandHive", Contexts.Hive, {
         }
     },
 
-    get cacheKey() "commands/hives/" + this.name + ".json",
+    get cacheKey() { return "commands/hives/" + this.name + ".json"; },
 
     /** @property {Iterator(Command)} @private */
     "@@iterator": function __iterator__() {
@@ -678,13 +683,15 @@ var Commands = Module("commands", {
                     this.modules.moduleManager.initDependencies("commands");
             },
 
-            get context() contexts.context,
+            get context() { return contexts.context; },
 
-            get readHeredoc() modules.io.readHeredoc,
+            get readHeredoc() { return modules.io.readHeredoc; },
 
-            get allHives() contexts.allGroups.commands,
+            get allHives() { return contexts.allGroups.commands; },
 
-            get userHives() this.allHives.filter(h => h !== this.builtin),
+            get userHives() {
+                return this.allHives.filter(h => h !== this.builtin);
+            },
 
             /**
              * Executes an Ex command script.
@@ -767,7 +774,9 @@ var Commands = Module("commands", {
                     return "";
                 }
                 // TODO: allow matching of aliases?
-                function cmds(hive) hive._list.filter(cmd => cmd.name.startsWith(filter || ""))
+                function cmds(hive) {
+                    return hive._list.filter(cmd => cmd.name.startsWith(filter || ""));
+                }
 
                 hives = (hives || this.userHives).map(h => [h, cmds(h)])
                                                  .filter(([h, c]) => c.length);
@@ -1356,7 +1365,7 @@ var Commands = Module("commands", {
             }
 
             if (complete)
-                var context = complete.fork(command.name).fork("opts", len);;
+                var context = complete.fork(command.name).fork("opts", len);
 
             if (!complete || /(\w|^)[!\s]/.test(str))
                 args = command.parseArgs(args, context, { count: count, bang: bang });
@@ -1389,10 +1398,10 @@ var Commands = Module("commands", {
     },
 
     /** @property */
-    get complQuote() Commands.complQuote,
+    get complQuote() { return Commands.complQuote; },
 
     /** @property */
-    get quoteArg() Commands.quoteArg // XXX: better somewhere else?
+    get quoteArg() { return Commands.quoteArg; } // XXX: better somewhere else?
 
 }, {
     // returns [count, parsed_argument]
@@ -1401,8 +1410,10 @@ var Commands = Module("commands", {
         let quote = null;
         let len = str.length;
 
-        function fixEscapes(str) str.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}|(.))/g,
-                                             (m, n1) => n1 || m);
+        function fixEscapes(str) {
+            return str.replace(/\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4}|(.))/g,
+                               (m, n1) => n1 || m);
+        }
 
         // Fix me.
         if (isString(sep))
@@ -1427,7 +1438,7 @@ var Commands = Module("commands", {
             else if ((res = /^(")((?:[^\\"]|\\.)*)("?)/.exec(str)))
                 arg += keepQuotes ? res[0] : JSON.parse(fixEscapes(res[0]) + (res[3] ? "" : '"'));
             else if ((res = /^(')((?:[^']|'')*)('?)/.exec(str)))
-                arg += keepQuotes ? res[0] : res[2].replace("''", "'", "g");
+                arg += keepQuotes ? res[0] : res[2].replace(/''/g, "'");
             else
                 break;
 
@@ -1641,7 +1652,7 @@ var Commands = Module("commands", {
                         description: "The argument completion function",
                         completer: function (context) [[k, ""] for ([k, v] of iter(config.completers))],
                         type: CommandOption.STRING,
-                        validator: function (arg) arg in config.completers || /^custom,/.test(arg),
+                        validator: function (arg) arg in config.completers || /^custom,/.test(arg)
                     },
                     {
                         names: ["-description", "-desc", "-d"],
@@ -1734,7 +1745,7 @@ var Commands = Module("commands", {
             name: ["listc[ommands]", "lc"],
             description: "List all Ex commands along with their short descriptions",
             index: "ex-cmd",
-            iterate: function (args) commands.iterator().map(function (cmd) ({
+            iterate: function (args) commands.iterator().map(cmd => ({
                 __proto__: cmd,
                 columns: [
                     cmd.hive == commands.builtin ? "" : ["span", { highlight: "Object", style: "padding-right: 1em;" },
@@ -1798,8 +1809,10 @@ var Commands = Module("commands", {
 
 let quote = function quote(q, list, map=Commands.quoteMap) {
     let re = RegExp("[" + list + "]", "g");
-    function quote(str) (q + String.replace(str, re, $0 => ($0 in map ? map[$0] : ("\\" + $0)))
-                           + q);
+    function quote(str) {
+        return (q + String.replace(str, re, $0 => ($0 in map ? map[$0] : ("\\" + $0)))
+                  + q);
+    }
     quote.list = list;
     return quote;
 };
@@ -1820,7 +1833,7 @@ Commands.complQuote = {
     "":  ["", Commands.quoteArg[""], ""]
 };
 
-Commands.parseBool = function (arg) {
+Commands.parseBool = arg => {
     if (/^(true|1|on)$/i.test(arg))
         return true;
     if (/^(false|0|off)$/i.test(arg))

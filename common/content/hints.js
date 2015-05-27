@@ -10,7 +10,7 @@
 /** @instance hints */
 
 var HintSession = Class("HintSession", CommandMode, {
-    get extendedMode() modes.HINTS,
+    get extendedMode() { return modes.HINTS; },
 
     init: function init(mode, opts={}) {
         init.supercall(this);
@@ -54,13 +54,16 @@ var HintSession = Class("HintSession", CommandMode, {
             this.checkUnique();
     },
 
-    get docs() this._docs = this._docs.filter(({ doc }) => !Cu.isDeadWrapper(doc)),
+    get docs() {
+        return this._docs = this._docs.filter(({ doc }) =>
+                                              !Cu.isDeadWrapper(doc));
+    },
     set docs(docs) {
         this._docs = docs;
     },
 
     Hint: {
-        get active() this._active,
+        get active() { return this._active; },
         set active(val) {
             this._active = val;
             if (val)
@@ -73,7 +76,7 @@ var HintSession = Class("HintSession", CommandMode, {
                 hints.setClass(this.imgSpan, this.valid ? val : null);
         },
 
-        get ambiguous() this.span.hasAttribute("ambiguous"),
+        get ambiguous() { return this.span.hasAttribute("ambiguous"); },
         set ambiguous(val) {
             let meth = val ? "setAttribute" : "removeAttribute";
             this.elem[meth]("ambiguous", "true");
@@ -82,7 +85,7 @@ var HintSession = Class("HintSession", CommandMode, {
                 this.imgSpan[meth]("ambiguous", "true");
         },
 
-        get valid() this._valid,
+        get valid() { return this._valid; },
         set valid(val) {
             this._valid = val,
 
@@ -93,9 +96,9 @@ var HintSession = Class("HintSession", CommandMode, {
         }
     },
 
-    get mode() modes.HINTS,
+    get mode() { return modes.HINTS; },
 
-    get prompt() ["Question", UTF8(this.hintMode.prompt) + ": "],
+    get prompt() { return ["Question", UTF8(this.hintMode.prompt) + ": "]; },
 
     leave: function leave(stack) {
         leave.superapply(this, arguments);
@@ -142,7 +145,7 @@ var HintSession = Class("HintSession", CommandMode, {
     },
 
     _escapeNumbers: false,
-    get escapeNumbers() this._escapeNumbers,
+    get escapeNumbers() { return this._escapeNumbers; },
     set escapeNumbers(val) {
         this.clearTimeout();
         this._escapeNumbers = !!val;
@@ -741,12 +744,12 @@ var HintSession = Class("HintSession", CommandMode, {
     updateStatusline: function _updateStatusline() {
         statusline.inputBuffer = (this.escapeNumbers ? "\\" : "") +
                                  (this.hintNumber ? this.getHintString(this.hintNumber) : "");
-    },
+    }
 });
 
 var Hints = Module("hints", {
     init: function init() {
-        this.resizeTimer = Timer(100, 500, function () {
+        this.resizeTimer = Timer(100, 500, () => {
             if (isinstance(modes.main, modes.HINTS))
                 modes.getStack(0).params.onResize();
         });
@@ -789,7 +792,7 @@ var Hints = Module("hints", {
         this.addMode("V", "View hint source in external editor",  (elem, loc) => buffer.viewSource(loc, true));
         this.addMode("y", "Yank hint location",                   (elem, loc) => editor.setRegister(null, cleanLoc(loc), true));
         this.addMode("Y", "Yank hint description",                elem => editor.setRegister(null, elem.textContent || "", true));
-        this.addMode("A", "Yank hint anchor url",                 function (elem) {
+        this.addMode("A", "Yank hint anchor url",                 elem => {
             let uri = elem.ownerDocument.documentURIObject.clone();
             uri.ref = elem.id || elem.name;
             dactyl.clipboardWrite(uri.spec, true);
@@ -798,9 +801,11 @@ var Hints = Module("hints", {
         this.addMode("i", "Show image",                           elem => dactyl.open(elem.src));
         this.addMode("I", "Show image in a new tab",              elem => dactyl.open(elem.src, dactyl.NEW_TAB));
 
-        function isScrollable(elem) isinstance(elem, [Ci.nsIDOMHTMLFrameElement,
-                                                      Ci.nsIDOMHTMLIFrameElement]) ||
-            Buffer.isScrollable(elem, 0, true) || Buffer.isScrollable(elem, 0, false);
+        function isScrollable(elem) {
+            return isinstance(elem, [Ci.nsIDOMHTMLFrameElement, Ci.nsIDOMHTMLIFrameElement]) ||
+                   Buffer.isScrollable(elem, 0, true) ||
+                   Buffer.isScrollable(elem, 0, false);
+        }
     },
 
     hintSession: Modes.boundProperty(),
@@ -820,7 +825,9 @@ var Hints = Module("hints", {
      *     @optional
      */
     addMode: function (mode, prompt, action, filter, tags) {
-        function toString(regexp) RegExp.prototype.toString.call(regexp);
+        function toString(regexp) {
+            return RegExp.prototype.toString.call(regexp);
+        }
 
         if (tags != null) {
             let eht = options.get("extendedhinttags");
@@ -912,7 +919,9 @@ var Hints = Module("hints", {
          * @param {string} str The string to split.
          * @returns {Array(string)} The lowercased splits of the splitting.
          */
-        function tokenize(pat, str) str.split(pat).map(String.toLowerCase);
+        function tokenize(pat, str) {
+            return str.split(pat).map(String.toLowerCase);
+        }
 
         /**
          * Get a hint matcher for hintmatching=contains
@@ -928,7 +937,7 @@ var Hints = Module("hints", {
          */
         function containsMatcher(hintString) { //{{{
             let tokens = tokenize(/\s+/, hintString);
-            return function (linkText) {
+            return linkText => {
                 linkText = linkText.toLowerCase();
                 return tokens.every(token => indexOf(linkText, token) >= 0);
             };
@@ -1043,7 +1052,7 @@ var Hints = Module("hints", {
                 return true;
             }
 
-            return function (linkText) {
+            return linkText => {
                 if (hintStrings.length == 1 && hintStrings[0].length == 0)
                     return true;
 

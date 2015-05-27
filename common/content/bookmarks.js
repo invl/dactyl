@@ -33,12 +33,14 @@ var Bookmarks = Module("bookmarks", {
         }
     },
 
-    get format() ({
-        anchored: false,
-        title: ["URL", "Info"],
-        keys: { text: "url", description: "title", icon: "icon", extra: "extra", tags: "tags", isURI: function () true },
-        process: [template.icon, template.bookmarkDescription]
-    }),
+    get format() {
+        return {
+            anchored: false,
+            title: ["URL", "Info"],
+            keys: { text: "url", description: "title", icon: "icon", extra: "extra", tags: "tags", isURI: function () true },
+            process: [template.icon, template.bookmarkDescription]
+        };
+    },
 
     // TODO: why is this a filter? --djk
     get: function get(filter, tags, maxItems, extra) {
@@ -287,7 +289,9 @@ var Bookmarks = Module("bookmarks", {
         if (!queryURI)
             return Promise.reject();
 
-        function parse(req) JSON.parse(req.responseText)[1].filter(isString);
+        function parse(req) {
+            return JSON.parse(req.responseText)[1].filter(isString);
+        }
         return this.makeSuggestions(queryURI, parse, callback);
     },
 
@@ -430,10 +434,10 @@ var Bookmarks = Module("bookmarks", {
             names: ["-tags", "-T"],
             description: "A comma-separated list of tags",
             completer: function tags(context) {
-                context.generate = function () Ary(b.tags
-                                                   for (b of bookmarkcache)
-                                                   if (b.tags))
-                                                  .flatten().uniq().array;
+                context.generate = () => Ary(b.tags
+                                             for (b of bookmarkcache)
+                                             if (b.tags))
+                                            .flatten().uniq().array;
                 context.keys = { text: util.identity, description: util.identity };
             },
             type: CommandOption.LIST
@@ -559,7 +563,7 @@ var Bookmarks = Module("bookmarks", {
             function (args) {
                 if (args.bang)
                     commandline.input(_("bookmark.prompt.deleteAll") + " ").then(
-                        function (resp) {
+                        resp => {
                             if (resp && resp.match(/^y(es)?$/i)) {
                                 bookmarks.remove(Object.keys(bookmarkcache.bookmarks));
                                 dactyl.echomsg(_("bookmark.allDeleted"));
@@ -646,7 +650,7 @@ var Bookmarks = Module("bookmarks", {
         options.add(["suggestengines"],
              "Search engines used for search suggestions",
              "stringlist", "google",
-             { completer: function completer(context) completion.searchEngine(context, true), });
+             { completer: function completer(context) completion.searchEngine(context, true) });
     },
 
     completion: function initCompletion() {
@@ -678,12 +682,12 @@ var Bookmarks = Module("bookmarks", {
 
             let item = keywords[keyword];
             if (item && item.url.contains("%s"))
-                context.fork("keyword/" + keyword, keyword.length + space.length, null, function (context) {
+                context.fork("keyword/" + keyword, keyword.length + space.length, null, context => {
                     context.format = history.format;
                     context.title = [/*L*/keyword + " Quick Search"];
                     context.keys = { text: "url", description: "title", icon: "icon" };
                     context.compare = CompletionContext.Sort.unsorted;
-                    context.generate = function () {
+                    context.generate = () => {
                         let [begin, end] = item.url.split("%s");
 
                         let seen = new RealSet;

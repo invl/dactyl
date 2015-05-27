@@ -176,17 +176,21 @@ var Modules = function Modules(window) {
 
         newContext: newContext,
 
-        get ownPropertyValues() Ary.compact(
+        get ownPropertyValues() {
+            return Ary.compact(
                 Object.getOwnPropertyNames(this)
-                      .map(name => Object.getOwnPropertyDescriptor(this, name).value)),
+                      .map(name => Object.getOwnPropertyDescriptor(this, name).value));
+        },
 
-        get moduleList() this.ownPropertyValues.filter(mod => (mod instanceof this.ModuleBase || mod.isLocalModule))
+        get moduleList() {
+            return this.ownPropertyValues.filter(mod => (mod instanceof this.ModuleBase || mod.isLocalModule));
+        }
     });
 
     modules.plugins = create(modules);
     modules.modules = modules;
     return modules;
-}
+};
 
 config.loadStyles();
 
@@ -241,7 +245,7 @@ overlay.overlayWindow(Object.keys(config.overlays),
                 this.initDependencies(className);
             }
             else
-                modules.__defineGetter__(className, function () {
+                modules.__defineGetter__(className, () => {
                     let module = modules.jsmodules[className];
                     Class.replaceProperty(modules, className, module);
                     if (module.reallyInit)
@@ -350,14 +354,14 @@ overlay.overlayWindow(Object.keys(config.overlays),
                 }
             };
 
-            INIT[name].require = function (name) { init[name](); };
+            INIT[name].require = name => { init[name](); };
         }
     },
 
     scanModules: function scanModules() {
         let { Module, modules } = this.modules;
 
-        defineModule.modules.forEach((mod) => {
+        defineModule.modules.forEach(mod => {
             let names = new RealSet(Object.keys(mod.INIT));
             if ("init" in mod.INIT)
                 names.add("init");
@@ -366,14 +370,14 @@ overlay.overlayWindow(Object.keys(config.overlays),
                 this.deferInit(name, mod.INIT, mod);
         });
 
-        Module.list.forEach((mod) => {
+        Module.list.forEach(mod => {
             if (!mod.frobbed) {
                 modules.__defineGetter__(mod.className, () => {
                     delete modules[mod.className];
                     return this.loadModule(mod.className, null, Components.stack.caller);
                 });
                 Object.keys(mod.prototype.INIT)
-                      .forEach((name) => { this.deferInit(name, mod.prototype.INIT, mod); });
+                      .forEach(name => { this.deferInit(name, mod.prototype.INIT, mod); });
             }
             mod.frobbed = true;
         });

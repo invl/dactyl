@@ -80,12 +80,12 @@ const Player = Module("player", {
     },
 
     /** @property {sbIMediaListView} The current media list view. @private */
-    get _currentView() SBGetBrowser().currentMediaListView,
+    get _currentView() { return SBGetBrowser().currentMediaListView; },
 
     /**
      * @property {number} The player volume in the range 0.0-1.0.
      */
-    get volume() gMM.volumeControl.volume,
+    get volume() { return gMM.volumeControl.volume; },
     set volume(value) {
         gMM.volumeControl.volume = value;
     },
@@ -465,11 +465,13 @@ const Player = Module("player", {
 
             historyKey: "search-view",
 
-            get prompt() this.mode === modules.modes.SEARCH_VIEW_BACKWARD ? "?" : "/",
+            get prompt() {
+                return this.mode === modules.modes.SEARCH_VIEW_BACKWARD ? "?" : "/";
+            },
 
-            get onCancel() player.closure.onSearchCancel,
-            get onChange() player.closure.onSearchKeyPress,
-            get onSubmit() player.closure.onSearchSubmit
+            get onCancel() { return player.closure.onSearchCancel; },
+            get onChange() { return player.closure.onSearchKeyPress; },
+            get onSubmit() { return player.closure.onSearchSubmit; }
         });
     },
     commands: function initCommands() {
@@ -550,7 +552,9 @@ const Player = Module("player", {
                 dactyl.assert(/^[+-]?(\d+[smh]?|(\d+:\d\d:|\d+:)?\d{2})$/.test(arg),
                     _("error.invalidArgument", arg));
 
-                function ms(t, m) Math.abs(parseInt(t, 10) * { s: 1000, m: 60000, h: 3600000 }[m])
+                function ms(t, m) {
+                    return Math.abs(parseInt(t, 10) * { s: 1000, m: 60000, h: 3600000 }[m]);
+                }
 
                 if (/:/.test(arg)) {
                     let [seconds, minutes, hours] = arg.split(":").reverse();

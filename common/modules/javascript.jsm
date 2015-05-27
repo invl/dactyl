@@ -382,7 +382,10 @@ var JavaScript = Module("javascript", {
         }
 
         // We've already listed anchored matches, so don't list them again here.
-        function unanchored(item) util.compareIgnoreCase(item.text.substr(0, this.filter.length), this.filter);
+        function unanchored(item) {
+            return util.compareIgnoreCase(item.text.substr(0, this.filter.length),
+                                          this.filter);
+        }
 
         objects.forEach(function (obj) {
             let context = base.fork(obj[1]);
@@ -402,7 +405,7 @@ var JavaScript = Module("javascript", {
 
         // TODO: Make this a generic completion helper function.
         objects.forEach(function (obj) {
-            obj.ctxt_t.split(obj[1] + "/anchored", this, function (context) {
+            obj.ctxt_t.split(obj[1] + "/anchored", this, context => {
                 context.anchored = true;
                 if (compl)
                     compl(context, obj[0]);
@@ -413,14 +416,14 @@ var JavaScript = Module("javascript", {
             return;
 
         objects.forEach(function (obj) {
-            obj.ctxt_p.split(obj[1] + "/anchored", this, function (context) {
+            obj.ctxt_p.split(obj[1] + "/anchored", this, context => {
                 context.anchored = true;
                 context.title[0] += /*L*/" (prototypes)";
             });
         });
 
         objects.forEach(function (obj) {
-            obj.ctxt_t.split(obj[1] + "/unanchored", this, function (context) {
+            obj.ctxt_t.split(obj[1] + "/unanchored", this, context => {
                 context.anchored = false;
                 context.title[0] += /*L*/" (substrings)";
                 context.filters.push(unanchored);
@@ -428,7 +431,7 @@ var JavaScript = Module("javascript", {
         });
 
         objects.forEach(function (obj) {
-            obj.ctxt_p.split(obj[1] + "/unanchored", this, function (context) {
+            obj.ctxt_p.split(obj[1] + "/unanchored", this, context => {
                 context.anchored = false;
                 context.title[0] += /*L*/" (prototype substrings)";
                 context.filters.push(unanchored);
@@ -445,7 +448,7 @@ var JavaScript = Module("javascript", {
         return this.evalled(key);
     },
 
-    get cache() this.context.cache,
+    get cache() { return this.context.cache; },
 
     complete: function _complete(context) {
         const self = this;
@@ -641,8 +644,7 @@ var JavaScript = Module("javascript", {
          .concat([k.substr(3) for (k of keys(Ci)) if (/^nsI/.test(k))])
          .concat(this.magicalNames)
          .filter(k => k in this.window));
-    }),
-
+    })
 }, {
     EVAL_TMP: "__dactyl_eval_tmp",
 
@@ -693,7 +695,7 @@ var JavaScript = Module("javascript", {
     },
     completion: function (dactyl, modules, window) {
         update(modules.completion, {
-            get javascript() modules.javascript.bound.complete,
+            get javascript() { return modules.javascript.bound.complete; },
             javascriptCompleter: JavaScript // Backwards compatibility
         });
     },
@@ -806,7 +808,7 @@ var JavaScript = Module("javascript", {
 
             mode: modes.REPL,
 
-            get completionList() this.widgets.statusbar.commandline.id,
+            get completionList() { return this.widgets.statusbar.commandline.id; },
 
             accept: function accept() {
                 dactyl.trapErrors(function () { this.repl.addOutput(this.command); }, this);
@@ -857,7 +859,9 @@ var JavaScript = Module("javascript", {
     mappings: function initMappings(dactyl, modules, window) {
         const { mappings, modes } = modules;
 
-        function bind(...args) apply(mappings, "add", [[modes.REPL]].concat(args))
+        function bind(...args) {
+            return apply(mappings, "add", [[modes.REPL]].concat(args));
+        }
 
         bind(["<Return>"], "Accept the current input",
              function ({ self }) { self.accept(); });

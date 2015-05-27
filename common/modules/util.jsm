@@ -22,7 +22,7 @@ var Magic = Class("Magic", {
         this.str = str;
     },
 
-    get message() this.str,
+    get message() { return this.str; },
 
     toString: function () this.str
 });
@@ -59,7 +59,7 @@ var wrapCallback = function wrapCallback(fn, isEvent) {
         };
     fn.wrapper.wrapped = fn;
     return fn.wrapper;
-}
+};
 
 var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), {
     Magic: Magic,
@@ -259,17 +259,19 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
         let stack = [frame()];
         stack.__defineGetter__("top", function () this[this.length - 1]);
 
-        function frame() update(
-            function _frame(obj)
-                _frame === stack.top || _frame.valid(obj)
-                    ? _frame.elements.map(e => callable(e) ? e(obj) : e)
-                                     .join("")
-                    : "",
-            {
-                elements: [],
-                seen: {},
-                valid: function valid(obj) this.elements.every(e => !e.test || e.test(obj))
-            });
+        function frame() {
+            return update(
+                function _frame(obj)
+                    _frame === stack.top || _frame.valid(obj)
+                        ? _frame.elements.map(e => callable(e) ? e(obj) : e)
+                                        .join("")
+                        : "",
+                {
+                    elements: [],
+                    seen: {},
+                    valid: function valid(obj) this.elements.every(e => !e.test || e.test(obj))
+                });
+        }
 
         let end = 0;
         for (let match of util.regexp.iterate(/(.*?)%(.)/gy, format)) {
@@ -297,8 +299,8 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
                 char = char.toLowerCase();
 
                 stack.top.elements.push(update(
-                    function (obj) obj[char] != null ? quote(obj, char)
-                                                     : "",
+                    obj => obj[char] != null ? quote(obj, char)
+                                             : "",
                     { test: function test(obj) obj[char] != null }));
 
                 for (let elem of stack)
@@ -345,17 +347,19 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
         if (!keepUnknown)
             unknown = () => "";
 
-        function frame() update(
-            function _frame(obj)
-                _frame === stack.top || _frame.valid(obj)
-                    ? _frame.elements.map(e => callable(e) ? e(obj) : e)
-                            .join("")
-                    : "",
-            {
-                elements: [],
-                seen: new RealSet,
-                valid: function valid(obj) this.elements.every(e => (!e.test || e.test(obj)))
-            });
+        function frame() {
+            return update(
+                function _frame(obj)
+                    _frame === stack.top || _frame.valid(obj)
+                        ? _frame.elements.map(e => callable(e) ? e(obj) : e)
+                                .join("")
+                        : "",
+                {
+                    elements: [],
+                    seen: new RealSet,
+                    valid: function valid(obj) this.elements.every(e => (!e.test || e.test(obj)))
+                });
+        }
 
         let defaults = { lt: "<", gt: ">" };
 
@@ -501,7 +505,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
 
             let patterns = [];
             let substrings = split(pattern, /((?:[^\\{]|\\.)*)\{((?:[^\\}]|\\.)*)\}/gy,
-                function (match) {
+                match => {
                     patterns.push(split(match[2], /((?:[^\\,]|\\.)*),/gy,
                         null, ",{}"));
                 }, "{}");
@@ -604,7 +608,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
     escapeString: function escapeString(str, delimiter) {
         if (delimiter == undefined)
             delimiter = '"';
-        return delimiter + str.replace(/([\\'"])/g, "\\$1").replace("\n", "\\n", "g").replace("\t", "\\t", "g") + delimiter;
+        return delimiter + str.replace(/([\\'"])/g, "\\$1").replace(/\n/g, "\\n").replace(/\t/g, "\\t") + delimiter;
     },
 
     /**
@@ -655,8 +659,12 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
      * @returns {string}
      */
     formatSeconds: function formatSeconds(seconds) {
-        function pad(n, val) ("0000000" + val).substr(-Math.max(n, String(val).length));
-        function div(num, denom) [Math.floor(num / denom), Math.round(num % denom)];
+        function pad(n, val) {
+            return ("0000000" + val).substr(-Math.max(n, String(val).length));
+        }
+        function div(num, denom) {
+            return [Math.floor(num / denom), Math.round(num % denom)];
+        }
         let days, hours, minutes;
 
         [minutes, seconds] = div(Math.round(seconds), 60);
@@ -854,8 +862,8 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
      * @returns {Object}
      */
     intersection: function intersection(r1, r2) ({
-        get width()  this.right - this.left,
-        get height() this.bottom - this.top,
+        get width()  { return this.right  - this.left; },
+        get height() { return this.bottom - this.top; },
         left: Math.max(r1.left, r2.left),
         right: Math.min(r1.right, r2.right),
         top: Math.max(r1.top, r2.top),
@@ -964,7 +972,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
         return iter(obj)
           .map(([k, v]) => ["<!ENTITY ", k, " '", String.replace(v == null ? "null" : typeof v == "xml" ? v.toXMLString() : v,
                                                                  typeof v == "xml" ? /['%]/g : /['"%&<>]/g,
-                                                                 function (m) map[m]),
+                                                                 m => map[m]),
                             "'>"].join(""))
           .join("\n");
     },
@@ -1582,8 +1590,8 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
             let done = false;
             var promise = test,
                 retVal;
-            promise.then((arg) => { retVal = arg; done = true; },
-                         (arg) => { retVal = arg; done = true; });
+            promise.then(arg => { retVal = arg; done = true; },
+                         arg => { retVal = arg; done = true; });
             test = () => done;
         }
 

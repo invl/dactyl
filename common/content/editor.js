@@ -16,7 +16,7 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
         if (elem)
             this.element = elem;
         else
-            this.__defineGetter__("element", function () {
+            this.__defineGetter__("element", () => {
                 let elem = dactyl.focusedElement;
                 if (elem)
                     return elem.inputField || elem;
@@ -26,8 +26,14 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
             });
     },
 
-    get registers() storage.newMap("registers", { privateData: true, store: true }),
-    get registerRing() storage.newArray("register-ring", { privateData: true, store: true }),
+    get registers() {
+        return storage.newMap("registers",
+                              { privateData: true, store: true });
+    },
+    get registerRing() {
+        return storage.newArray("register-ring",
+                                { privateData: true, store: true });
+    },
 
     skipSave: false,
 
@@ -118,10 +124,10 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
         }
     },
 
-    get isCaret() modes.getStack(1).main == modes.CARET,
-    get isTextEdit() modes.getStack(1).main == modes.TEXT_EDIT,
+    get isCaret() { return modes.getStack(1).main == modes.CARET; },
+    get isTextEdit() { return modes.getStack(1).main == modes.TEXT_EDIT; },
 
-    get editor() DOM(this.element).editor,
+    get editor() { return DOM(this.element).editor; },
 
     getController: function getController(cmd) {
         let controllers = this.element && this.element.controllers;
@@ -130,8 +136,10 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
         return controllers.getControllerForCommand(cmd || "cmd_beginLine");
     },
 
-    get selection() this.editor && this.editor.selection || null,
-    get selectionController() this.editor && this.editor.selectionController || null,
+    get selection() { return this.editor && this.editor.selection || null; },
+    get selectionController() {
+        return this.editor && this.editor.selectionController || null;
+    },
 
     deselect: function () {
         if (this.selection && this.selection.focusNode)
@@ -156,9 +164,11 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
             this.selection.addRange(range);
     },
 
-    get selectedText() String(this.selection),
+    get selectedText() { return String(this.selection); },
 
-    get preserveSelection() this.editor && !this.editor.shouldTxnSetSelection,
+    get preserveSelection() {
+        return this.editor && !this.editor.shouldTxnSetSelection;
+    },
     set preserveSelection(val) {
         if (this.editor)
             this.editor.setShouldTxnSetSelection(!val);
@@ -299,7 +309,9 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
         // Find the *count*th occurance of *char* before a non-collapsed
         // \n, ignoring the character at the caret.
         let i = 0;
-        function test(c) (collapse || c != "\n") && !!(!i++ || c != char || --count)
+        function test(c) {
+            return (collapse || c != "\n") && !!(!i++ || c != char || --count);
+        }
 
         Editor.extendRange(range, !backward, { test: test }, true);
         dactyl.assert(count == 0);
@@ -769,17 +781,17 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
 
             context.match = function (r) !this.filter || this.filter.contains(r);
 
-            context.fork("clipboard", 0, this, function (ctxt) {
+            context.fork("clipboard", 0, this, ctxt => {
                 ctxt.match = context.match;
                 ctxt.title = ["Clipboard Registers"];
                 ctxt.completions = Object.keys(editor.selectionRegisters);
             });
-            context.fork("kill-ring", 0, this, function (ctxt) {
+            context.fork("kill-ring", 0, this, ctxt => {
                 ctxt.match = context.match;
                 ctxt.title = ["Kill Ring Registers"];
                 ctxt.completions = Array.slice("0123456789");
             });
-            context.fork("user", 0, this, function (ctxt) {
+            context.fork("user", 0, this, ctxt => {
                 ctxt.match = context.match;
                 ctxt.title = ["User Defined Registers"];
                 ctxt.completions = editor.registers.keys();
@@ -804,7 +816,7 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
                         this.editor.endTransaction();
                     this.editor = null;
                 }
-            },
+            }
         };
         Map.types["operator"] = {
             preExecute: function preExecute(args) {
@@ -912,7 +924,7 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
 
         function clear(forward, re)
             function _clear(editor) {
-                updateRange(editor, forward, re, function (range) {});
+                updateRange(editor, forward, re, range => {});
                 dactyl.assert(!editor.selection.isCollapsed);
                 editor.selection.deleteFromDocument();
                 let parent = DOM(editor.rootElement.parentNode);
@@ -923,13 +935,12 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
         function move(forward, re, sameWord)
             function _move(editor) {
                 updateRange(editor, forward, re,
-                            function (range) { range.collapse(!forward); },
+                            range => { range.collapse(!forward); },
                             sameWord);
             }
         function select(forward, re)
             function _select(editor) {
-                updateRange(editor, forward, re,
-                            function (range) {});
+                updateRange(editor, forward, re, range => {});
             }
         function beginLine(editor_) {
             editor.executeCommand("cmd_beginLine");
@@ -1317,7 +1328,7 @@ var Editor = Module("editor", XPCOM(Ci.nsIEditActionListener, ModuleBase), {
             ["~"], "Switch case of the character under the cursor and move the cursor to the right",
             function ({ count }) {
                 function munger(range)
-                    String(range).replace(/./g, function (c) {
+                    String(range).replace(/./g, c => {
                         let lc = c.toLocaleLowerCase();
                         return c == lc ? c.toLocaleUpperCase() : lc;
                     });
