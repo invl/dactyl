@@ -201,6 +201,7 @@ defineModule("base", {
         "deprecated",
         "endModule",
         "hasOwnProperty",
+        "identity",
         "isArray",
         "isGenerator",
         "isObject",
@@ -273,10 +274,12 @@ function apply(obj, meth, args) {
  * @default false
  * @returns {Generator}
  */
-function prototype(obj)
-    obj.__proto__ || Object.getPrototypeOf(obj) ||
-    XPCNativeWrapper.unwrap(obj).__proto__ ||
-    Object.getPrototypeOf(XPCNativeWrapper.unwrap(obj));
+function prototype(obj) {
+    return obj.__proto__ ||
+           Object.getPrototypeOf(obj) ||
+           XPCNativeWrapper.unwrap(obj).__proto__ ||
+           Object.getPrototypeOf(XPCNativeWrapper.unwrap(obj));
+}
 
 function* properties(obj, prototypes) {
     let orig = obj;
@@ -643,7 +646,8 @@ var isinstance_types = {
     boolean: Boolean,
     string: String,
     function: Function,
-    number: Number
+    number: Number,
+    symbol: Symbol
 };
 function isinstance(object, interfaces) {
     if (object == null)
@@ -712,6 +716,11 @@ function isString(val) {
 /**
  * Returns true if and only if its sole argument may be called
  * as a function. This includes classes and function objects.
+ *
+ * Excludes callable DOM objects: https://bugzil.la/268945
+ *
+ * @param {*} val
+ * @returns {boolean}
  */
 function callable(val) {
     return typeof val === "function" && !(val instanceof Ci.nsIDOMElement);
@@ -721,6 +730,14 @@ function call(fn, self, ...args) {
     fn.apply(self, args);
     return fn;
 }
+
+/**
+ * Returns *val*.
+ *
+ * @param {*} val
+ * @returns {*}
+ */
+function identity(val) { return val; }
 
 /**
  * Memoizes an object property value.
@@ -793,10 +810,12 @@ function update(target) {
                 desc = desc.value.init(k, target) || desc.value;
 
             try {
-                if (typeof desc.value === "function" && target.__proto__ && !(desc.value instanceof Ci.nsIDOMElement /* wtf? */)) {
+                if (callable(desc.value) && target.__proto__) {
                     let func = desc.value.wrapped || desc.value;
                     if (!func.superapply) {
-                        func.__defineGetter__("super", function get_super() Object.getPrototypeOf(target)[k]);
+                        func.__defineGetter__("super", function get_super() {
+                            return Object.getPrototypeOf(target)[k];
+                        });
 
                         func.superapply = function superapply(self, args) {
                             let meth = Object.getPrototypeOf(target)[k];
@@ -918,8 +937,10 @@ Class.objectGlobal = object => {
  *
  * @param {Object} desc The property descriptor.
  */
-Class.Property = function Property(desc) update(
-    Object.create(Property.prototype), desc || { configurable: true, writable: true });
+Class.Property = function Property(desc) {
+    return update(Object.create(Property.prototype),
+                  desc || { configurable: true, writable: true });
+};
 Class.Property.prototype.init = () => {};
 /**
  * Extends a subclass with a superclass. The subclass's
@@ -998,7 +1019,9 @@ Class.Memoize = function Memoize(getter, wait)
                     }
                 };
 
-            this.set = function s_Memoize(val) Class.replaceProperty(this.instance || this, key, val);
+            this.set = function s_Memoize(val) {
+                return Class.replaceProperty(this.instance || this, key, val);
+            };
         }
     });
 
@@ -1006,8 +1029,8 @@ Class.Memoize = function Memoize(getter, wait)
  * Updates the given object with the object in the target class's
  * prototype.
  */
-Class.Update = function Update(obj)
-    Class.Property({
+Class.Update = function Update(obj) {
+    return Class.Property({
         configurable: true,
         enumerable: true,
         writable: true,
@@ -1015,12 +1038,15 @@ Class.Update = function Update(obj)
             this.value = update({}, target[key], obj);
         }
     });
+};
 
 Class.replaceProperty = function replaceProperty(obj, prop, value) {
     Object.defineProperty(obj, prop, { configurable: true, enumerable: true, value: value, writable: true });
     return value;
 };
-Class.toString = function toString() "[class " + this.className + "]";
+Class.toString = function toString() {
+    return "[class " + this.className + "]";
+};
 Class.prototype = {
     /**
      * Initializes new instances of this class. Called automatically
@@ -1353,8 +1379,12 @@ function Struct(...args) {
         members: Ary(args).map((v, k) => [v, k]).toObject()
     });
     args.forEach(function (name, i) {
-        Struct.prototype.__defineGetter__(name, function () this[i]);
-        Struct.prototype.__defineSetter__(name, function (val) { this[i] = val; });
+        Struct.prototype.__defineGetter__(name, function () {
+            return this[i];
+        });
+        Struct.prototype.__defineSetter__(name, function (val) {
+            this[i] = val;
+        });
     });
     return Struct;
 }
@@ -1374,6 +1404,10 @@ var StructBase = Class("StructBase", Array, {
 
     get: function struct_get(key, val) this[this.members[key]],
     set: function struct_set(key, val) this[this.members[key]] = val,
+
+    toObject: function struct_toObject() {
+        return iter.toObject([k, this[k]] for (k of keys(this.members)));
+    },
 
     toString: function struct_toString() Class.prototype.toString.apply(this, arguments),
 
@@ -1401,9 +1435,12 @@ var StructBase = Class("StructBase", Array, {
      */
     defaultValue: function defaultValue(key, val) {
         let i = this.prototype.members[key];
-        this.prototype.__defineGetter__(i, function () (this[i] = val.call(this)));
-        this.prototype.__defineSetter__(i, function (value)
-            Class.replaceProperty(this, i, value));
+        this.prototype.__defineGetter__(i, function () {
+            return this[i] = val.call(this);
+        });
+        this.prototype.__defineSetter__(i, function (value) {
+            return Class.replaceProperty(this, i, value);
+        });
         return this;
     },
 
@@ -1541,7 +1578,7 @@ function iter(obj, iface) {
                 for (let j of iter(args[i]))
                     yield j;
         })();
-    else if (isinstance(obj, ["Array"]))
+    else if (isinstance(obj, ["Array", StructBase]))
         res = obj.entries();
     else if (Symbol.iterator in obj)
         res = obj[Symbol.iterator]();
@@ -1614,7 +1651,7 @@ update(iter, {
     compact: function compact(iter) (item for (item of iter) if (item != null)),
 
     every: function every(iter, pred, self) {
-        pred = pred || util.identity;
+        pred = pred || identity;
         for (let elem of iter)
             if (!pred.call(self, elem))
                 return false;
@@ -1622,7 +1659,7 @@ update(iter, {
     },
 
     some: function every(iter, pred, self) {
-        pred = pred || util.identity;
+        pred = pred || identity;
         for (let elem of iter)
             if (pred.call(self, elem))
                 return true;
@@ -1706,18 +1743,19 @@ update(iter, {
     },
 
     /**
-     * Zips the contents of two arrays. The resulting array is the length of
-     * ary1, with any shortcomings of ary2 replaced with null strings.
+     * Zips the contents of two iterables. The resulting iterable is the length
+     * of iter1, with any shortcomings of iter2 replaced with null strings.
      *
-     * @param {Array} ary1
-     * @param {Array} ary2
-     * @returns {Array}
+     * @param {Iterable} iter1
+     * @param {Iterable} iter2
+     * @returns {Generator}
      */
     zip: function* zip(iter1, iter2) {
-        try {
-            yield [iter1.next(), iter2.next()];
+        let i = iter2[Symbol.iterator]();
+        for (let x of iter1) {
+            let y = i.next().value;
+            yield [x, y === undefined ? "" : y];
         }
-        catch (e if e instanceof StopIteration) {}
     }
 });
 
@@ -1728,7 +1766,9 @@ const Iter = Class("Iter", {
             this.iter = iter.__iterator__();
 
         if (this.iter.finalize)
-            this.finalize = function finalize() apply(this.iter, "finalize", arguments);
+            this.finalize = function finalize() {
+                return apply(this.iter, "finalize", arguments);
+            };
     },
 
     next: function next() this.iter.next(),
@@ -1774,13 +1814,12 @@ var Ary = Class("Ary", Array, {
         if (Symbol.iterator in ary && !isArray(ary))
             ary = [k for (k of ary)];
 
-        let self = this;
         return new Proxy(ary, {
             get: function array_get(target, prop) {
                 if (prop == "array")
                     return target;
 
-                if (prop in Ary && callable(Ary[prop]))
+                if (hasOwnProperty(Ary, prop) && callable(Ary[prop]))
                     return arrayWrap(Ary[prop].bind(Ary, target));
 
                 let p = target[prop];

@@ -16,12 +16,12 @@ var Bookmarks = Module("bookmarks", {
         storage.addObserver("bookmark-cache", function (key, event, arg) {
             if (["add", "change", "remove"].indexOf(event) >= 0)
                 autocommands.trigger("Bookmark" + util.capitalize(event),
-                     iter({
+                     update({
                          bookmark: {
                              toString: function () "bookmarkcache.bookmarks[" + arg.id + "]",
                              valueOf: function () arg
                          }
-                     }, arg).toObject());
+                     }, arg.toObject()));
             bookmarks.timer.tell();
         }, window);
     },
@@ -438,7 +438,7 @@ var Bookmarks = Module("bookmarks", {
                                              for (b of bookmarkcache)
                                              if (b.tags))
                                             .flatten().uniq().array;
-                context.keys = { text: util.identity, description: util.identity };
+                context.keys = { text: identity, description: identity };
             },
             type: CommandOption.LIST
         };
@@ -659,7 +659,10 @@ var Bookmarks = Module("bookmarks", {
             context.format = bookmarks.format;
             iter(extra).forEach(function ([k, v]) {
                 if (v != null)
-                    context.filters.push(function (item) item.item[k] != null && this.matchString(v, item.item[k]));
+                    context.filters.push(function (item) {
+                        return item.item[k] != null &&
+                               this.matchString(v, item.item[k]);
+                    });
             });
             context.generate = () => values(bookmarkcache.bookmarks);
             completion.urls(context, tags);
@@ -702,7 +705,7 @@ var Bookmarks = Module("bookmarks", {
                                 }
                                 catch (e) {}
                             return null;
-                        }).filter(util.identity);
+                        }).filter(identity);
                     };
                 });
         };
@@ -739,7 +742,7 @@ var Bookmarks = Module("bookmarks", {
                 let ctxt = context.fork(name, 0);
 
                 ctxt.title = [/*L*/desc + " Suggestions"];
-                ctxt.keys = { text: util.identity, description: function () "" };
+                ctxt.keys = { text: identity, description: function () "" };
                 ctxt.compare = CompletionContext.Sort.unsorted;
                 ctxt.filterFunc = null;
 

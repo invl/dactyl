@@ -260,7 +260,9 @@ var Buffer = Module("Buffer", {
     get modules() { return this.topWindow.dactyl.modules; },
     set modules(val) {},
 
-    topWindow: Class.Memoize(function () util.topWindow(this.win)),
+    topWindow: Class.Memoize(function () {
+        return util.topWindow(this.win);
+    }),
 
     /**
      * @property {nsIURI} The current top-level document's URI.
@@ -909,10 +911,8 @@ var Buffer = Module("Buffer", {
      *
      * @param {boolean} direction The direction to scroll. If true then
      *     scroll up and if false scroll down.
-     * @param {number} count The multiple of 'scroll' lines to scroll.
-     * @optional
      */
-    scrollByScrollSize: function scrollByScrollSize(direction, count=1) {
+    scrollByScrollSize: function scrollByScrollSize(direction) {
         let { options } = this.modules;
 
         direction = direction ? 1 : -1;
@@ -1042,7 +1042,9 @@ var Buffer = Module("Buffer", {
                         .sort((a, b) => a[1] - b[1]);
 
         if (offScreen && !reverse)
-            elems = elems.filter(function (e) e[1] > this, this.topWindow.innerHeight);
+            elems = elems.filter(function (e) {
+                return e[1] > this, this.topWindow.innerHeight;
+            });
 
         let idx = Math.min((count || 1) - 1, elems.length);
         util.assert(idx in elems);
@@ -1568,7 +1570,7 @@ var Buffer = Module("Buffer", {
                        _("buffer.save.altText")]);
 
         if (!isinstance(node, Ci.nsIDOMDocument) && node.textContent)
-            names.push([node.textContent,
+            names.push([node.textContent.trim(),
                        _("buffer.save.linkText")]);
 
         names.push([decodeURIComponent(url.replace(/.*?([^\/]*)\/*$/, "$1")),
@@ -2549,7 +2551,7 @@ var Buffer = Module("Buffer", {
                                 res = iter.find(filter.matcher(doc),
                                                 elem => ((elem.nodeValue || elem.textContent).trim() == line &&
                                                          DOM(elem).display != "none"))
-                                   || iter.nth(filter.matcher(doc), util.identity, line - 1);
+                                   || iter.nth(filter.matcher(doc), identity, line - 1);
                             if (res)
                                 break;
                         }

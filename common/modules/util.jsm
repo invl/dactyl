@@ -98,6 +98,8 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
     haveGecko: deprecated("config.haveGecko", { get: function haveGecko() config.bound.haveGecko }),
     OS: deprecated("config.OS", { get: function OS() config.OS }),
 
+    identity: deprecated("identity", { get: function identity() global.identity }),
+
     dactyl: update(function dactyl(obj) {
         if (obj)
             var global = Class.objectGlobal(obj);
@@ -257,20 +259,21 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
 
     compileFormat: function compileFormat(format) {
         let stack = [frame()];
-        stack.__defineGetter__("top", function () this[this.length - 1]);
+        stack.__defineGetter__("top", function () {
+            return this[this.length - 1];
+        });
 
         function frame() {
-            return update(
-                function _frame(obj)
-                    _frame === stack.top || _frame.valid(obj)
-                        ? _frame.elements.map(e => callable(e) ? e(obj) : e)
-                                        .join("")
-                        : "",
-                {
-                    elements: [],
-                    seen: {},
-                    valid: function valid(obj) this.elements.every(e => !e.test || e.test(obj))
-                });
+            return update(function _frame(obj) {
+                return _frame === stack.top || _frame.valid(obj)
+                            ? _frame.elements.map(e => callable(e) ? e(obj) : e)
+                                            .join("")
+                            : "";
+            }, {
+                elements: [],
+                seen: new RealSet,
+                valid: function valid(obj) this.elements.every(e => !e.test || e.test(obj))
+            });
         }
 
         let end = 0;
@@ -341,24 +344,26 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
      */
     compileMacro: function compileMacro(macro, keepUnknown) {
         let stack = [frame()];
-        stack.__defineGetter__("top", function () this[this.length - 1]);
+        stack.__defineGetter__("top", function () {
+            return this[this.length - 1];
+        });
 
-        let unknown = util.identity;
+        let unknown = identity;
         if (!keepUnknown)
             unknown = () => "";
 
+        // FIXME: duplicated in compileFormat
         function frame() {
-            return update(
-                function _frame(obj)
-                    _frame === stack.top || _frame.valid(obj)
-                        ? _frame.elements.map(e => callable(e) ? e(obj) : e)
-                                .join("")
-                        : "",
-                {
-                    elements: [],
-                    seen: new RealSet,
-                    valid: function valid(obj) this.elements.every(e => (!e.test || e.test(obj)))
-                });
+            return update(function _frame(obj) {
+                return _frame === stack.top || _frame.valid(obj)
+                            ? _frame.elements.map(e => callable(e) ? e(obj) : e)
+                                            .join("")
+                            : "";
+            }, {
+                elements: [],
+                seen: new RealSet,
+                valid: function valid(obj) this.elements.every(e => !e.test || e.test(obj))
+            });
         }
 
         let defaults = { lt: "<", gt: ">" };
@@ -392,11 +397,13 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
                 let [, flags, name] = /^((?:[a-z]-)*)(.*)/.exec(macro);
                 flags = new RealSet(flags);
 
-                let quote = util.identity;
+                let quote = identity;
                 if (flags.has("q"))
-                    quote = function quote(obj) typeof obj === "number" ? obj : JSON.stringify(obj);
+                    quote = function quote(obj) {
+                        return typeof obj === "number" ? obj : JSON.stringify(obj);
+                    };
                 if (flags.has("e"))
-                    quote = function quote(obj) "";
+                    quote = function quote(obj) { return ""; };
 
                 if (hasOwnProperty(defaults, name))
                     stack.top.elements.push(quote(defaults[name]));
@@ -847,14 +854,6 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
     },
 
     /**
-     * The identity function.
-     *
-     * @param {Object} k
-     * @returns {Object}
-     */
-    identity: function identity(k) k,
-
-    /**
      * Returns the intersection of two rectangles.
      *
      * @param {Object} r1
@@ -879,7 +878,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
     isDactyl: Class.Memoize(function () {
         let base = util.regexp.escape(Components.stack.filename.replace(/[^\/]+$/, ""));
         let re = RegExp("^(?:.* -> )?(?:resource://dactyl(?!-content/eval.js)|" + base + ")\\S+$");
-        return function isDactyl(frame) re.test(frame.filename);
+        return function isDactyl(frame) { return re.test(frame.filename); };
     }),
 
     /**
@@ -967,14 +966,24 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
      *      for *obj*.
      */
     makeDTD: function makeDTD(obj) {
-        let map = { "'": "&apos;", '"': "&quot;", "%": "&#x25;", "&": "&amp;", "<": "&lt;", ">": "&gt;" };
+        let map = {
+            "'": "&apos;", '"': "&quot;", "%": "&#x25;",
+            "&": "&amp;",  "<": "&lt;",   ">": "&gt;"
+        };
 
-        return iter(obj)
-          .map(([k, v]) => ["<!ENTITY ", k, " '", String.replace(v == null ? "null" : typeof v == "xml" ? v.toXMLString() : v,
-                                                                 typeof v == "xml" ? /['%]/g : /['"%&<>]/g,
-                                                                 m => map[m]),
-                            "'>"].join(""))
-          .join("\n");
+        function escape(val) {
+           let isDOM = DOM.isJSONXML(val);
+           return String.replace(val == null ? "null" :
+                                 isDOM       ? DOM.toXML(val)
+                                             : val,
+                                 isDOM ? /['%]/g
+                                       : /['"%&<>]/g,
+                                 m => map[m]);
+        }
+
+        return iter(obj).map(([k, v]) =>
+                             ["<!ENTITY ", k, " '", escape(v), "'>"].join(""))
+                        .join("\n");
     },
 
     /**
@@ -1194,13 +1203,11 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
      *
      * @param {number} start The interval's start value.
      * @param {number} end The interval's end value.
-     * @param {boolean} step The value to step the range by. May be
-     *     negative. @default 1
-     * @returns {Iterator(Object)}
+     * @param {number} step The value to step the range by. May be negative.
+     *     @default 1
+     * @returns {Generator(number)}
      */
-    range: function* range(start, end, step) {
-        if (!step)
-            step = 1;
+    range: function* range(start, end, step=1) {
         if (step > 0) {
             for (; start < end; start += step)
                 yield start;
@@ -1407,7 +1414,9 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
 
             this.errors.push([new Date, obj + "\n" + obj.stack]);
             this.errors = this.errors.slice(-this.maxErrors);
-            this.errors.toString = function () [k + "\n" + v for ([k, v] of this)].join("\n\n");
+            this.errors.toString = function () {
+                return [k + "\n" + v for ([k, v] of this)].join("\n\n");
+            };
 
             this.dump(String(error));
             this.dump(obj);
@@ -1634,7 +1643,7 @@ var Util = Module("Util", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakReference]), 
                 }
                 catch (e if e instanceof StopIteration) {};
             })();
-        }),
+    }),
 
     /**
      * Wraps a callback function such that its errors are not lost. This

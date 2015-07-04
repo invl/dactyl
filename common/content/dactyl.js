@@ -16,8 +16,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
     init: function () {
         window.dactyl = this;
         // cheap attempt at compatibility
-        let prop = { get: deprecated("dactyl", function liberator() dactyl),
-                     configurable: true };
+        let prop = {
+            get: deprecated("dactyl", function liberator() { return dactyl; }),
+            configurable: true
+        };
         Object.defineProperty(window, "liberator", prop);
         Object.defineProperty(modules, "liberator", prop);
         this.commands = {};
@@ -254,8 +256,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
             {
                 argCount: "*",
                 completer: function (context, args) {
-                    context.keys.text = util.identity;
-                    context.keys.description = function () seen[this.text] + /*L*/" matching items";
+                    context.keys.text = identity;
+                    context.keys.description = function () {
+                        return seen[this.text] + /*L*/" matching items";
+                    };
                     context.ignoreCase = true;
                     let seen = {};
                     context.completions = Ary(keys(item).join(" ").toLowerCase().split(/[()\s]+/)
@@ -475,7 +479,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
 
         if (fileName == null)
             if (info)
-                ({ file: fileName, line: lineNumber, context: ctxt }) = info;
+                ({ file: fileName, line: lineNumber, context: ctxt } = info);
 
         if (fileName && fileName[0] == "[")
             fileName = "dactyl://command-line/";
@@ -658,7 +662,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
      */
     generateHelp: function generateHelp(obj, extraHelp, str, specOnly) {
         let link, tag, spec;
-        link = tag = spec = util.identity;
+        link = tag = spec = identity;
         let args = null;
 
         if (obj instanceof Command) {
@@ -848,7 +852,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         click: function onClick(event) {
             let elem = event.originalTarget;
 
-            if (elem instanceof Element && services.security.isSystemPrincipal(elem.nodePrincipal)) {
+            if (elem instanceof Ci.nsIDOMElement && services.security.isSystemPrincipal(elem.nodePrincipal)) {
                 let command = elem.getAttributeNS(NS, "command");
                 if (command && event.button == 0) {
                     event.preventDefault();
@@ -1220,8 +1224,14 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
     get windows() { return [w for (w of overlay.windows)]; }
 
 }, {
-    toolbarHidden: function toolbarHidden(elem) "true" == (elem.getAttribute("autohide") ||
-                                                           elem.getAttribute("collapsed"))
+    isToolbarHidden: function isToolbarHidden(toolbar) {
+        return toolbar.getAttribute("autohide")  == "true" ||
+               toolbar.getAttribute("collapsed") == "true";
+    },
+    getToolbarName: function getToolbarName(toolbar) {
+        return toolbar.getAttribute("aria-label") ||
+               toolbar.getAttribute("toolbarname");
+    }
 }, {
     cache: function initCache() {
         cache.register("help/plugins.xml", () => {
@@ -1276,7 +1286,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                        template.map(iter(dactyl.indices),
                                     ([name, iter]) =>
                            ["dl", { insertafter: name + "-index" },
-                               template.map(iter(), util.identity)],
+                               template.map(iter(), identity)],
                            "\n\n")]);
         }, true);
 
@@ -1400,7 +1410,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 // FIXME: cleanup
                 cleanupValue: config.cleanups.guioptions ||
                     "rb" + [k for ([k, v] of iter(groups[1].opts))
-                            if (!Dactyl.toolbarHidden(document.getElementById(v[1][0])))].join(""),
+                            if (!Dactyl.isToolbarHidden(document.getElementById(v[1][0])))].join(""),
 
                 values: Ary(groups).map(g => [[k, v[0]] for ([k, v] of iter(g.opts))])
                                    .flatten(),
@@ -1671,19 +1681,12 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 options: startupOptions
             });
 
-        function findToolbar(name) {
-            return DOM.XPath(
-                "//*[@toolbarname=" + util.escapeString(name, "'") + " or " +
-                    "@toolbarname=" + util.escapeString(name.trim(), "'") + "]",
-                document).snapshotItem(0);
-        }
-
-        var toolbox = document.getElementById("navigator-toolbox");
-        if (toolbox) {
+        if (config.toolbars.length) {
             let toolbarCommand = function (names, desc, action, filter) {
                 commands.add(names, desc,
                     function (args) {
-                        let toolbar = findToolbar(args[0] || "");
+                        let name = args[0].trim();
+                        let toolbar = config.toolbars.find(t => Dactyl.getToolbarName(t) === name);
                         dactyl.assert(toolbar, _("error.invalidArgument"));
                         action(toolbar);
                         events.checkFocus();
@@ -1698,14 +1701,17 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                     });
             };
 
-            toolbarCommand(["toolbars[how]", "tbs[how]"], "Show the named toolbar",
-                toolbar => dactyl.setNodeVisible(toolbar, true),
-                ({ item }) => Dactyl.toolbarHidden(item));
-            toolbarCommand(["toolbarh[ide]", "tbh[ide]"], "Hide the named toolbar",
-                toolbar => dactyl.setNodeVisible(toolbar, false),
-                ({ item }) => !Dactyl.toolbarHidden(item));
-            toolbarCommand(["toolbart[oggle]", "tbt[oggle]"], "Toggle the named toolbar",
-                toolbar => dactyl.setNodeVisible(toolbar, Dactyl.toolbarHidden(toolbar)));
+            toolbarCommand(["toolbars[how]", "tbs[how]"],
+                           "Show the named toolbar",
+                           toolbar => dactyl.setNodeVisible(toolbar, true),
+                           ({ item }) => Dactyl.isToolbarHidden(item));
+            toolbarCommand(["toolbarh[ide]", "tbh[ide]"],
+                           "Hide the named toolbar",
+                           toolbar => dactyl.setNodeVisible(toolbar, false),
+                           ({ item }) => !Dactyl.isToolbarHidden(item));
+            toolbarCommand(["toolbart[oggle]", "tbt[oggle]"],
+                           "Toggle the named toolbar",
+                           toolbar => dactyl.setNodeVisible(toolbar, Dactyl.isToolbarHidden(toolbar)));
         }
 
         commands.add(["time"],
@@ -1866,11 +1872,13 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
             context.generate = () => dactyl.menuItems;
         };
 
-        var toolbox = document.getElementById("navigator-toolbox");
         completion.toolbar = function toolbar(context) {
             context.title = ["Toolbar"];
-            context.keys = { text: function (item) item.getAttribute("toolbarname"), description: function () "" };
-            context.completions = DOM.XPath("//*[@toolbarname]", document);
+            context.keys = {
+                text: Dactyl.getToolbarName,
+                description: function () ""
+            };
+            context.completions = config.toolbars;
         };
 
         completion.window = function window(context) {

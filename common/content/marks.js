@@ -47,10 +47,12 @@ var Marks = Module("marks", {
         params.offset = buffer.scrollPosition;
         params.path = DOM(buffer.findScrollable(0, false)).xpath;
         params.timestamp = Date.now() * 1000;
-        params.equals = function (m) this.location == m.location
-                                  && this.offset.x == m.offset.x
-                                  && this.offset.y == m.offset.y
-                                  && this.path == m.path;
+        params.equals = function (m) {
+            return this.location == m.location &&
+                   this.offset.x == m.offset.x &&
+                   this.offset.y == m.offset.y &&
+                   this.path == m.path;
+        };
         return params;
     },
 
@@ -299,14 +301,14 @@ var Marks = Module("marks", {
                     "(" + Math.round(mark.offset.x * 100),
                           Math.round(mark.offset.y * 100) + ")",
                     (tab && "tab: " + tabs.index(tab))
-            ].filter(util.identity).join(", ");
+            ].filter(identity).join(", ");
 
         if (mark.position)
             return [name, mark.location,
                     "(" + Math.round(mark.position.x * 100) + "%",
                           Math.round(mark.position.y * 100) + "%)",
                     (tab && "tab: " + tabs.index(tab))
-            ].filter(util.identity).join(", ");
+            ].filter(identity).join(", ");
     },
 
     isLocalMark: bind("test", /^[a-z`']$/),

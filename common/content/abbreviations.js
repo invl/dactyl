@@ -105,7 +105,7 @@ var AbbrevHive = Class("AbbrevHive", Contexts.Hive, {
     },
 
     /** @property {boolean} True if there are no abbreviations. */
-    get empty() { return !values(this._store).find(util.identity); },
+    get empty() { return !values(this._store).find(identity); },
 
     /**
      * Adds a new abbreviation.
@@ -251,7 +251,7 @@ var Abbreviations = Module("abbreviations", {
         let match = this._match.exec(text);
         if (match)
             return this.hives.map(h => h.get(mode, match[2] || match[4] || match[6]))
-                       .find(util.identity);
+                       .find(identity);
         return null;
     },
 
@@ -266,8 +266,10 @@ var Abbreviations = Module("abbreviations", {
     list: function (modes, lhs, hives) {
         hives = (hives || this.userHives).filter(h => !h.empty);
 
-        function abbrevs(hive)
-            hive.merged.filter(ab => (ab.inModes(modes) && ab.lhs.startsWith(lhs)));
+        function abbrevs(hive) {
+            return hive.merged.filter(a => a.inModes(modes) &&
+                                           a.lhs.startsWith(lhs));
+        }
 
         let list = ["table", {},
                 ["tr", { highlight: "Title" },
@@ -285,7 +287,7 @@ var Abbreviations = Module("abbreviations", {
                                 ["td", { highlight: "Title" }, !i++ ? String(hive.name) : ""],
                                 ["td", {}, abbrev.modeChar],
                                 ["td", {}, abbrev.lhs],
-                                ["td", {}, abbrev.rhs]]),
+                                ["td", {}, String(abbrev.rhs)]]),
                         ["tr", { style: "height: .5ex;" }]];
                 })];
 

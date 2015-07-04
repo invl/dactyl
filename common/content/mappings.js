@@ -45,10 +45,12 @@ var Map = Class("Map", {
         }
     },
 
-    name: Class.Memoize(function () this.names[0]),
+    name: Class.Memoize(function () { return this.names[0]; }),
 
     /** @property {[string]} All of this mapping's names (key sequences). */
-    names: Class.Memoize(function () this._keys.map(k => DOM.Event.canonicalKeys(k))),
+    names: Class.Memoize(function () {
+        return this._keys.map(k => DOM.Event.canonicalKeys(k));
+    }),
 
     get toStringParams() {
         return [this.modes.map(m => m.name),
@@ -194,7 +196,7 @@ var MapHive = Class("MapHive", Contexts.Hive, {
      */
     add: function (modes, keys, description, action, extra={}) {
         modes = Array.concat(modes);
-        if (!modes.every(util.identity))
+        if (!modes.every(identity))
             throw TypeError(/*L*/"Invalid modes: " + modes);
 
         let map = Map(modes, keys, description, action, extra);
