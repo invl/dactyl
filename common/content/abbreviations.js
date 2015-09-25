@@ -39,7 +39,9 @@ var Abbreviation = Class("Abbreviation", {
      * @param {Abbreviation} other The abbreviation to test.
      * @returns {boolean} The result of the comparison.
      */
-    equals: function (other) this.lhs == other.lhs && this.rhs == other.rhs,
+    equals: function (other) {
+        return this.lhs == other.lhs && this.rhs == other.rhs;
+    },
 
     /**
      * Returns the abbreviation's expansion text.
@@ -48,7 +50,9 @@ var Abbreviation = Class("Abbreviation", {
      *     occurring.
      * @returns {string}
      */
-    expand: function (editor) String(callable(this.rhs) ? this.rhs(editor) : this.rhs),
+    expand: function (editor) {
+        return String(callable(this.rhs) ? this.rhs(editor) : this.rhs);
+    },
 
     /**
      * Returns true if this abbreviation is defined for all *modes*.
@@ -56,7 +60,9 @@ var Abbreviation = Class("Abbreviation", {
      * @param {[Mode]} modes The modes to test.
      * @returns {boolean} The result of the comparison.
      */
-    modesEqual: function (modes) Ary.equals(this.modes, modes),
+    modesEqual: function (modes) {
+        return Ary.equals(this.modes, modes);
+    },
 
     /**
      * Returns true if this abbreviation is defined for *mode*.
@@ -64,7 +70,9 @@ var Abbreviation = Class("Abbreviation", {
      * @param {Mode} mode The mode to test.
      * @returns {boolean} The result of the comparison.
      */
-    inMode: function (mode) this.modes.some(m => m == mode),
+    inMode: function (mode) {
+        return this.modes.some(m => m == mode);
+    },
 
     /**
      * Returns true if this abbreviation is defined in any of *modes*.
@@ -72,7 +80,9 @@ var Abbreviation = Class("Abbreviation", {
      * @param {[Modes]} modes The modes to test.
      * @returns {boolean} The result of the comparison.
      */
-    inModes: function (modes) modes.some(mode => this.inMode(mode)),
+    inModes: function (modes) {
+        return modes.some(mode => this.inMode(mode));
+    },
 
     /**
      * Remove *mode* from the list of supported modes for this abbreviation.
@@ -341,9 +351,9 @@ var Abbreviations = Module("abbreviations", {
                     identifier: "abbreviate",
                     completer: function (context, args) {
                         if (args.length == 1)
-                            return completion.abbreviation(context, modes, args["-group"]);
+                            completion.abbreviation(context, modes, args["-group"]);
                         else if (args["-javascript"])
-                            return completion.javascript(context);
+                            completion.javascript(context);
                     },
                     hereDoc: true,
                     literal: 1,
@@ -354,22 +364,24 @@ var Abbreviations = Module("abbreviations", {
                             description: "Expand this abbreviation by evaluating its right-hand-side as JavaScript"
                         }
                     ],
-                    serialize: function () Ary(abbreviations.userHives)
-                        .filter(h => h.persist)
-                        .map(hive => [
-                            {
-                                command: this.name,
-                                arguments: [abbr.lhs],
-                                literalArg: abbr.rhs,
-                                options: {
-                                    "-group": hive.name == "user" ? undefined : hive.name,
-                                    "-javascript": callable(abbr.rhs) ? null : undefined
+                    serialize: function () {
+                        return Ary(abbreviations.userHives)
+                            .filter(h => h.persist)
+                            .map(hive => [
+                                {
+                                    command: this.name,
+                                    arguments: [abbr.lhs],
+                                    literalArg: abbr.rhs,
+                                    options: {
+                                        "-group": hive.name == "user" ? undefined : hive.name,
+                                        "-javascript": callable(abbr.rhs) ? null : undefined
+                                    }
                                 }
-                            }
-                            for (abbr of hive.merged)
-                            if (abbr.modesEqual(modes))
-                        ]).
-                        flatten().array
+                                for (abbr of hive.merged)
+                                if (abbr.modesEqual(modes))
+                            ]).
+                            flatten().array;
+                    }
                 });
 
             commands.add([ch + "una[bbreviate]"],
@@ -384,7 +396,9 @@ var Abbreviations = Module("abbreviations", {
                 }, {
                     argCount: "?",
                     bang: true,
-                    completer: function (context, args) completion.abbreviation(context, modes, args["-group"]),
+                    completer: function (context, args) {
+                        completion.abbreviation(context, modes, args["-group"]);
+                    },
                     literal: 0,
                     options: [contexts.GroupFlag("abbrevs")]
                 });

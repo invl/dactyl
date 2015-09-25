@@ -18,8 +18,10 @@ var Bookmarks = Module("bookmarks", {
                 autocommands.trigger("Bookmark" + util.capitalize(event),
                      update({
                          bookmark: {
-                             toString: function () "bookmarkcache.bookmarks[" + arg.id + "]",
-                             valueOf: function () arg
+                             toString: function () {
+                                 return "bookmarkcache.bookmarks[" + arg.id + "]";
+                             },
+                             valueOf: function () { return arg; }
                          }
                      }, arg.toObject()));
             bookmarks.timer.tell();
@@ -37,7 +39,7 @@ var Bookmarks = Module("bookmarks", {
         return {
             anchored: false,
             title: ["URL", "Info"],
-            keys: { text: "url", description: "title", icon: "icon", extra: "extra", tags: "tags", isURI: function () true },
+            keys: { text: "url", description: "title", icon: "icon", extra: "extra", tags: "tags", isURI: function () { return true; }},
             process: [template.icon, template.bookmarkDescription]
         };
     },
@@ -516,16 +518,18 @@ var Bookmarks = Module("bookmarks", {
                         context.completions = [
                             [win.document.documentURI, frames.length == 1 ? /*L*/"Current Location" : /*L*/"Frame: " + win.document.title]
                             for (win of frames)];
-                        return;
                     }
-                    completion.bookmark(context, args["-tags"], { keyword: args["-keyword"], title: args["-title"] });
+                    else
+                        completion.bookmark(context, args["-tags"], { keyword: args["-keyword"], title: args["-title"] });
                 },
                 options: [keyword, title, tags, post,
                     {
                         names: ["-charset", "-c"],
                         description: "The character encoding of the bookmark",
                         type: CommandOption.STRING,
-                        completer: function (context) completion.charset(context),
+                        completer: function (context) {
+                            completion.charset(context);
+                        },
                         validator: io.bound.validateCharset
                     },
                     {
@@ -541,8 +545,7 @@ var Bookmarks = Module("bookmarks", {
             function (args) {
                 bookmarks.list(args.join(" "), args["-tags"] || [], args.bang, args["-max"],
                                { keyword: args["-keyword"], title: args["-title"] });
-            },
-            {
+            }, {
                 bang: true,
                 completer: function completer(context, args) {
                     context.filter = args.join(" ");
@@ -584,13 +587,15 @@ var Bookmarks = Module("bookmarks", {
                     dactyl.echomsg({ message: _("bookmark.deleted", deletedCount) });
                 }
 
-            },
-            {
+            }, {
                 argCount: "?",
                 bang: true,
-                completer: function completer(context, args)
-                    completion.bookmark(context, args["-tags"], { keyword: args["-keyword"], title: args["-title"] }),
-                domains: function (args) Ary.compact(args.map(util.getHost)),
+                completer: function completer(context, args) {
+                    completion.bookmark(context, args["-tags"], { keyword: args["-keyword"], title: args["-title"] });
+                },
+                domains: function (args) {
+                    return Ary.compact(args.map(util.getHost));
+                },
                 literal: 0,
                 options: [tags, title, keyword],
                 privateData: true
@@ -643,14 +648,21 @@ var Bookmarks = Module("bookmarks", {
             {
                 completer: function completer(context) {
                     completion.search(context, true);
-                    context.completions = [{ keyword: "", title: "Don't perform searches by default" }].concat(context.completions);
+                    context.completions = [{
+                        keyword: "",
+                        title: "Don't perform searches by default"
+                    }].concat(context.completions);
                 }
             });
 
         options.add(["suggestengines"],
              "Search engines used for search suggestions",
              "stringlist", "google",
-             { completer: function completer(context) completion.searchEngine(context, true) });
+             {
+                 completer: function completer(context) {
+                     completion.searchEngine(context, true);
+                 }
+             });
     },
 
     completion: function initCompletion() {
@@ -742,7 +754,10 @@ var Bookmarks = Module("bookmarks", {
                 let ctxt = context.fork(name, 0);
 
                 ctxt.title = [/*L*/desc + " Suggestions"];
-                ctxt.keys = { text: identity, description: function () "" };
+                ctxt.keys = {
+                    text: identity,
+                    description: function () { return ""; }
+                };
                 ctxt.compare = CompletionContext.Sort.unsorted;
                 ctxt.filterFunc = null;
 

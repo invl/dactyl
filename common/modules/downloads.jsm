@@ -76,7 +76,9 @@ var Download = Class("Download", {
 
     get status() { return states[this.state]; },
 
-    inState: function inState(states) states.indexOf(this.status) >= 0,
+    inState: function inState(states) {
+        return states.indexOf(this.status) >= 0;
+    },
 
     allowedCommands: Class.Memoize(function () {
         let self = this;
@@ -161,11 +163,12 @@ var Download = Class("Download", {
         url:      (a, b) => String.localeCompare(a.source.url, b.source.url)
     },
 
-    compare: function compare(other) values(this.list.sortOrder).map(function (order) {
-        let val = this._compare[order.substr(1)](this, other);
-
-        return (order[0] == "-") ? -val : val;
-    }, this).find(identity) || 0,
+    compare: function compare(other) {
+        return values(this.list.sortOrder).map(function (order) {
+            let val = this._compare[order.substr(1)](this, other);
+            return (order[0] == "-") ? -val : val;
+        }, this).find(identity) || 0;
+    },
 
     timeRemaining: Infinity,
 
@@ -344,7 +347,9 @@ var DownloadList = Class("DownloadList",
                                              this.nodes.list.childNodes[i + 1]);
     },
 
-    shouldSort: function shouldSort() Array.some(arguments, val => this.sortOrder.some(v => v.substr(1) == val)),
+    shouldSort: function shouldSort() {
+        return Array.some(arguments, val => this.sortOrder.some(v => v.substr(1) == val));
+    },
 
     update: function update() {
         for (let node of values(this.nodes))
@@ -427,8 +432,8 @@ var DownloadList = Class("DownloadList",
  "tryToKeepPartialData"].forEach(key => {
     if (!(key in Download.prototype))
         Object.defineProperty(Download.prototype, key, {
-            get: function get() this.download[key],
-            set: function set(val) this.download[key] = val,
+            get: function get() { return this.download[key]; },
+            set: function set(val) { this.download[key] = val; },
             configurable: true
         });
 });
@@ -481,8 +486,7 @@ var Downloads_ = Module("downloads", XPCOM(Ci.nsIDownloadProgressListener), {
             function (args) {
                 let downloads = DownloadList(modules, args[0], args["-sort"]);
                 modules.commandline.echo(downloads);
-            },
-            {
+            }, {
                 argCount: "?",
                 options: [
                     {
@@ -492,8 +496,12 @@ var Downloads_ = Module("downloads", XPCOM(Ci.nsIDownloadProgressListener), {
                         get default() {
                             return modules.options["downloadsort"];
                         },
-                        completer: function (context, args) modules.options.get("downloadsort").completer(context, { values: args["-sort"] }),
-                        validator: function (value) modules.options.get("downloadsort").validator(value)
+                        completer: function (context, args) {
+                            modules.options.get("downloadsort").completer(context, { values: args["-sort"] });
+                        },
+                        validator: function (value) {
+                            return modules.options.get("downloadsort").validator(value);
+                        }
                     }
                 ]
             });
@@ -546,7 +554,9 @@ var Downloads_ = Module("downloads", XPCOM(Ci.nsIDownloadProgressListener), {
                                                            .flatten().array;
                 },
 
-                has: function () Array.some(arguments, val => this.value.some(v => v.substr(1) == val)),
+                has: function () {
+                    return Array.some(arguments, val => this.value.some(v => v.substr(1) == val));
+                },
 
                 validator: function (value) {
                     let seen = new RealSet();

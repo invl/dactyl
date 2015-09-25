@@ -194,7 +194,9 @@ var HintSession = Class("HintSession", CommandMode, {
      * @param {string} key The key to test.
      * @returns {boolean} Whether the key represents a hint number.
      */
-    isHintKey: function isHintKey(key) this.hintKeys.indexOf(key) >= 0,
+    isHintKey: function isHintKey(key) {
+        return this.hintKeys.indexOf(key) >= 0;
+    },
 
     /**
      * Gets the actual offset of an imagemap area.
@@ -1266,9 +1268,10 @@ var Hints = Module("hints", {
         });
     },
     mappings: function () {
-        let bind = function bind(names, description, action, params)
+        let bind = function bind(names, description, action, params) {
             mappings.add(config.browserModes, names, description,
                          action, params);
+        };
 
         bind(["f"],
             "Start Hints mode",
@@ -1288,9 +1291,10 @@ var Hints = Module("hints", {
             function ({ count }) { hints.open("g;", { continue: true, count: count }); },
             { count: true });
 
-        bind = function bind(names, description, action, params)
+        bind = function bind(names, description, action, params) {
             mappings.add([modes.HINTS], names, description,
                          action, params);
+        };
 
         bind(["<Return>"],
             "Follow the selected hint",
@@ -1306,7 +1310,7 @@ var Hints = Module("hints", {
 
         bind(["<BS>", "<C-h>"],
             "Delete the previous character",
-            function ({ self }) self.backspace());
+            function ({ self }) { self.backspace(); });
 
         bind(["\\"],
             "Toggle hint filtering",
@@ -1343,7 +1347,9 @@ var Hints = Module("hints", {
                     return vals;
                 },
 
-                testValues: function testValues(vals, validator) vals.every(re => Option.splitList(re).every(validator)),
+                testValues: function testValues(vals, validator) {
+                    return vals.every(re => Option.splitList(re).every(validator));
+                },
 
                 validator: DOM.validateMatcher
             });
@@ -1381,7 +1387,7 @@ var Hints = Module("hints", {
         options.add(["hinttimeout", "hto"],
             "Timeout before automatically following a non-unique numerical hint",
             "number", 0,
-            { validator: function (value) value >= 0 });
+            { validator: function (value) { return value >= 0; } });
 
         options.add(["followhints", "fh"],
             "Define the conditions under which selected hints are followed",
@@ -1404,15 +1410,17 @@ var Hints = Module("hints", {
                     "wordstartswith": "The typed characters are split on whitespace. The resulting groups must all match the beginnings of words, in order.",
                     "transliterated": UTF8("When true, special latin characters are translated to their ASCII equivalents (e.g., é ⇒ e)")
                 },
-                validator: function (values) Option.validateCompleter.call(this, values) &&
-                    1 === values.reduce((acc, v) => acc + (["contains", "custom", "firstletters", "wordstartswith"].indexOf(v) >= 0),
-                                        0)
+                validator: function (values) {
+                    return Option.validateCompleter.call(this, values) &&
+                           1 === values.reduce((acc, v) => acc + (["contains", "custom", "firstletters", "wordstartswith"].indexOf(v) >= 0),
+                                               0);
+                }
             });
 
         options.add(["wordseparators", "wsp"],
             "Regular expression defining which characters separate words when matching hints",
             "string", '[.,!?:;/"^$%&?()[\\]{}<>#*+|=~ _-]',
-            { validator: function (value) RegExp(value) });
+            { validator: function (value) { return RegExp(value); } });
 
         options.add(["hintinputs", "hin"],
             "Which text is used to filter hints for input elements",

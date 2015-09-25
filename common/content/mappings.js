@@ -112,7 +112,9 @@ var Map = Class("Map", {
      * @param {string} name The name to query.
      * @returns {boolean}
      */
-    hasName: function (name) this.keys.indexOf(name) >= 0,
+    hasName: function (name) {
+        return this.keys.indexOf(name) >= 0;
+    },
 
     get keys() { return Ary.flatten(this.names.map(mappings.bound.expand)); },
 
@@ -232,7 +234,9 @@ var MapHive = Class("MapHive", Contexts.Hive, {
      * @param {string} cmd The map name to match.
      * @returns {Map|null}
      */
-    get: function (mode, cmd) this.getStack(mode).mappings[cmd],
+    get: function (mode, cmd) {
+        return this.getStack(mode).mappings[cmd];
+    },
 
     /**
      * Returns a count of maps with names starting with but not equal to
@@ -242,7 +246,9 @@ var MapHive = Class("MapHive", Contexts.Hive, {
      * @param {string} prefix The map prefix string to match.
      * @returns {number)
      */
-    getCandidates: function (mode, prefix) this.getStack(mode).candidates[prefix] || 0,
+    getCandidates: function (mode, prefix) {
+        return this.getStack(mode).candidates[prefix] || 0;
+    },
 
     /**
      * Returns whether there is a user-defined mapping *cmd* for the specified
@@ -252,7 +258,9 @@ var MapHive = Class("MapHive", Contexts.Hive, {
      * @param {string} cmd The candidate key mapping.
      * @returns {boolean}
      */
-    has: function (mode, cmd) this.getStack(mode).mappings[cmd] != null,
+    has: function (mode, cmd) {
+        return this.getStack(mode).mappings[cmd] != null;
+    },
 
     /**
      * Remove the mapping named *cmd* for *mode*.
@@ -291,7 +299,9 @@ var MapHive = Class("MapHive", Contexts.Hive, {
             return self;
         },
 
-        "@@iterator": function () Ary.iterValues(this),
+        "@@iterator": function () {
+            return Ary.iterValues(this);
+        },
 
         get candidates() { return this.states.candidates; },
         get mappings() { return this.states.mappings; },
@@ -401,7 +411,9 @@ var Mappings = Module("mappings", {
 
     // NOTE: just normal mode for now
     /** @property {Iterator(Map)} */
-    "@@iterator": function () this.iterate(modes.NORMAL),
+    "@@iterator": function () {
+        return this.iterate(modes.NORMAL);
+    },
 
     getDefault: deprecated("mappings.builtin.get", function getDefault(mode, cmd) this.builtin.get(mode, cmd)),
     getUserIterator: deprecated("mappings.user.iterator", function getUserIterator(modes) this.user.iterator(modes)),
@@ -439,7 +451,7 @@ var Mappings = Module("mappings", {
      * @param {string} description A description of the key mapping.
      * @param {function} action The action invoked by each key sequence.
      * @param {Object} extra An optional extra configuration hash (see
-     *     {@link Map#extraInfo}).
+     *     {@link Map#extra}).
      * @optional
      */
     addUserMap: deprecated("group.mappings.add", function addUserMap() {
@@ -455,8 +467,9 @@ var Mappings = Module("mappings", {
      * @param {string} cmd The map name to match.
      * @returns {Map}
      */
-    get: function get(mode, cmd) this.hives.map(h => h.get(mode, cmd))
-                                     .compact()[0] || null,
+    get: function get(mode, cmd) {
+        return this.hives.map(h => h.get(mode, cmd)).compact()[0] || null;
+    },
 
     /**
      * Returns a count of maps with names starting with but not equal to
@@ -466,9 +479,10 @@ var Mappings = Module("mappings", {
      * @param {string} prefix The map prefix string to match.
      * @returns {[Map]}
      */
-    getCandidates: function (mode, prefix)
-        this.hives.map(h => h.getCandidates(mode, prefix))
-                  .reduce((a, b) => (a + b), 0),
+    getCandidates: function (mode, prefix) {
+        return this.hives.map(h => h.getCandidates(mode, prefix))
+                         .reduce((a, b) => (a + b), 0);
+    },
 
     /**
      * Lists all user-defined mappings matching *filter* for the specified
@@ -575,12 +589,12 @@ var Mappings = Module("mappings", {
                 completer: function (context, args) {
                     let mapmodes = Ary.uniq(args["-modes"].map(findMode));
                     if (args.length == 1)
-                        return completion.userMapping(context, mapmodes, args["-group"]);
-                    if (args.length == 2) {
+                        completion.userMapping(context, mapmodes, args["-group"]);
+                    else if (args.length == 2) {
                         if (args["-javascript"])
-                            return completion.javascript(context);
-                        if (args["-ex"])
-                            return completion.ex(context);
+                            completion.javascript(context);
+                        else if (args["-ex"])
+                            completion.ex(context);
                     }
                 },
                 hereDoc: true,
@@ -629,8 +643,10 @@ var Mappings = Module("mappings", {
                     }
                 ],
                 serialize: function () {
-                    return this.name != "map" ? [] :
-                        Ary(mappings.userHives)
+                    if (this.name != "map")
+                        return [];
+                    else
+                        return Ary(mappings.userHives)
                             .filter(h => h.persist)
                             .map(hive => [
                                 {
@@ -691,8 +707,7 @@ var Mappings = Module("mappings", {
 
                     if (!found && !args.bang)
                         dactyl.echoerr(_("map.noSuch", args[0]));
-                },
-                {
+                }, {
                     identifier: "unmap",
                     argCount: "?",
                     bang: true,
@@ -712,10 +727,14 @@ var Mappings = Module("mappings", {
         let modeFlag = {
             names: ["-mode", "-m"],
             type: CommandOption.STRING,
-            validator: function (value) Array.concat(value).every(findMode),
-            completer: function () [[Ary.compact([mode.name.toLowerCase().replace(/_/g, "-"), mode.char]), mode.description]
-                                    for (mode of modes.all)
-                                    if (!mode.hidden)]
+            validator: function (value) {
+                return Array.concat(value).every(findMode);
+            },
+            completer: function () {
+                return [[Ary.compact([mode.name.toLowerCase().replace(/_/g, "-"), mode.char]), mode.description]
+                        for (mode of modes.all)
+                        if (!mode.hidden)];
+            }
         };
 
         function findMode(name) {
@@ -758,7 +777,7 @@ var Mappings = Module("mappings", {
                                mode.displayName);
 
         let args = {
-            getMode: function (args) findMode(args["-mode"]),
+            getMode: function (args) { return findMode(args["-mode"]); },
             iterate: function* (args, mainOnly) {
                 let modes = [this.getMode(args)];
                 if (!mainOnly)
@@ -783,13 +802,15 @@ var Mappings = Module("mappings", {
                                     };
             },
             format: {
-                description: function (map) [
+                description: function (map) {
+                    return [
                         options.get("passkeys").has(map.name)
                             ? ["span", { highlight: "URLExtra" },
                                 "(", template.linkifyHelp(_("option.passkeys.passedBy")), ")"]
                             : [],
                         template.linkifyHelp(map.description + (map.rhs ? ": " + map.rhs : ""))
-                ],
+                    ];
+                },
                 help: function (map) {
                     let char = Ary.compact(map.modes.map(m => m.char))[0];
                     return char === "n" ? map.name : char ? char + "_" + map.name : "";
@@ -826,15 +847,21 @@ var Mappings = Module("mappings", {
                     },
                     description: "List all " + mode.displayName + " mode mappings along with their short descriptions",
                     index: mode.char + "-map",
-                    getMode: function (args) mode,
+                    getMode: function (args) { return mode; },
                     options: []
                 });
         });
     },
     completion: function initCompletion(dactyl, modules, window) {
         completion.userMapping = function userMapping(context, modes_=[modes.NORMAL], hive=mappings.user) {
-            context.keys = { text: function (m) m.names[0],
-                             description: function (m) m.description + ": " + m.action };
+            context.keys = {
+                text: function (m) {
+                    return m.names[0];
+                },
+                description: function (m) {
+                    return m.description + ": " + m.action;
+                }
+            };
             context.completions = hive.iterate(modes_);
         };
     },
@@ -842,8 +869,10 @@ var Mappings = Module("mappings", {
         JavaScript.setCompleter([Mappings.prototype.get, MapHive.prototype.get],
             [
                 null,
-                function (context, obj, args) [[m.names, m.description]
-                                               for (m of this.iterate(args[0]))]
+                function (context, obj, args) {
+                    return [[m.names, m.description]
+                            for (m of this.iterate(args[0]))];
+                }
             ]);
     },
     mappings: function initMappings(dactyl, modules, window) {

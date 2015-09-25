@@ -19,12 +19,13 @@ var callResult = function callResult(method, ...args) {
     return function (result) { result[method].apply(result, args); };
 };
 
-var listener = function listener(action, event)
-    function addonListener(install) {
+var listener = function listener(action, event) {
+    return function addonListener(install) {
         this.dactyl[install.error ? "echoerr" : "echomsg"](
             _("addon.error", action, event, (install.name || install.sourceURI.spec) +
                 (install.error ? ": " + addons.errors[install.error] : "")));
     };
+};
 
 var AddonListener = Class("AddonListener", {
     init: function init(modules) {
@@ -84,14 +85,14 @@ var actions = {
         name: "exte[nable]",
         description: "Enable an extension",
         action: function (addon) { addon.userDisabled = false; },
-        filter: function (addon) addon.userDisabled,
+        filter: function (addon) { return addon.userDisabled; },
         perm: "enable"
     },
     disable: {
         name: "extd[isable]",
         description: "Disable an extension",
         action: function (addon) { addon.userDisabled = true; },
-        filter: function (addon) !addon.userDisabled,
+        filter: function (addon) { return !addon.userDisabled; },
         perm: "disable"
     },
     options: {
@@ -104,7 +105,9 @@ var actions = {
             else
                 this.dactyl.open(addon.optionsURL, { from: "extoptions" });
         },
-        filter: function (addon) addon.isActive && addon.optionsURL
+        filter: function (addon) {
+            return addon.isActive && addon.optionsURL;
+        }
     },
     rehash: {
         name: "extr[ehash]",
@@ -185,7 +188,9 @@ var Addon = Class("Addon", {
             action.actions([this], this.list.modules);
     },
 
-    compare: function compare(other) String.localeCompare(this.name, other.name),
+    compare: function compare(other) {
+        return String.localeCompare(this.name, other.name);
+    },
 
     get statusInfo() {
         let info = this.isActive ? ["span", { highlight: "Enabled" }, "enabled"]
@@ -250,8 +255,8 @@ var Addon = Class("Addon", {
  "scope", "screenshots", "size", "sourceURI", "translators", "type", "updateDate", "userDisabled",
  "version"].forEach(function (prop) {
     Object.defineProperty(Addon.prototype, prop, {
-        get: function get_proxy() this.addon[prop],
-        set: function set_proxy(val) this.addon[prop] = val
+        get: function get_proxy() { return this.addon[prop]; },
+        set: function set_proxy(val) { this.addon[prop] = val; }
     });
 });
 
@@ -365,15 +370,16 @@ var Addons = Module("addons", {
 
                 if (modules.commandline.savingOutput)
                     util.waitFor(() => addons.ready);
-            },
-            {
+            }, {
                 argCount: "?",
                 options: [
                     {
                         names: ["-types", "-type", "-t"],
                         description: "The add-on types to list",
                         default: ["extension"],
-                        completer: function (context) completion.addonType(context),
+                        completer: function (context) {
+                            completion.addonType(context);
+                        },
                         type: CommandOption.LIST
                     }
                 ]
@@ -450,7 +456,9 @@ var Addons = Module("addons", {
                             names: ["-types", "-type", "-t"],
                             description: "The add-on types to operate on",
                             default: ["extension"],
-                            completer: function (context) completion.addonType(context),
+                            completer: function (context) {
+                                completion.addonType(context);
+                            },
                             type: CommandOption.LIST
                         }
                     ]

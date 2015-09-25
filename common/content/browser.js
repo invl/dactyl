@@ -51,7 +51,10 @@ var Browser = Module("browser", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), 
 
         uri = isObject(uri) ? uri : util.newURI(uri || doc.location.href);
         let args = {
-            url: { toString: function () uri.spec, valueOf: function () uri },
+            url: {
+                toString: function () { return uri.spec; },
+                valueOf: function () { return uri; }
+            },
             title: doc.title
         };
 
@@ -60,12 +63,16 @@ var Browser = Module("browser", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), 
         else {
             args.tab = tabs.getContentIndex(doc) + 1;
             args.doc = {
-                valueOf: function () doc,
-                toString: function () "tabs.getTab(" + (args.tab - 1) + ").linkedBrowser.contentDocument"
+                valueOf: function () { return doc; },
+                toString: function () {
+                    return "tabs.getTab(" + (args.tab - 1) + ").linkedBrowser.contentDocument";
+                }
             };
             args.win = {
-                valueOf: function () doc.defaultView,
-                toString: function () "tabs.getTab(" + (args.tab - 1) + ").linkedBrowser.contentWindow"
+                valueOf: function () { return doc.defaultView; },
+                toString: function () {
+                    return "tabs.getTab(" + (args.tab - 1) + ").linkedBrowser.contentWindow";
+                }
             };
         }
 
@@ -208,11 +215,14 @@ var Browser = Module("browser", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), 
     commands: function initCommands(dactyl, modules, window) {
         commands.add(["o[pen]"],
             "Open one or more URLs in the current tab",
-            function (args) { dactyl.open(args[0] || "about:blank"); },
-            {
-                completer: function (context) completion.url(context),
-                domains: function (args) Ary.compact(dactyl.parseURLs(args[0] || "")
-                                                           .map(url => util.getHost(url))),
+            function (args) {
+                dactyl.open(args[0] || "about:blank");
+            }, {
+                completer: function (context) { completion.url(context); },
+                domains: function (args) {
+                    return Ary.compact(dactyl.parseURLs(args[0] || "")
+                                             .map(url => util.getHost(url)));
+                },
                 literal: 0,
                 privateData: true
             });

@@ -29,18 +29,20 @@ lazyRequire("template", ["template"]);
  * @instance buffer
  */
 var Buffer = Module("Buffer", {
-    Local: function Local(dactyl, modules, window) ({
-        get win() {
-            return window.content;
-
-            let win = services.focus.focusedWindow;
-            if (!win || win == window || util.topWindow(win) != window)
+    Local: function Local(dactyl, modules, window) {
+        return {
+            get win() {
                 return window.content;
-            if (win.top == window)
-                return win;
-            return win.top;
-        }
-    }),
+
+                let win = services.focus.focusedWindow;
+                if (!win || win == window || util.topWindow(win) != window)
+                    return window.content;
+                if (win.top == window)
+                    return win;
+                return win.top;
+            }
+        };
+    },
 
     init: function init(win) {
         if (win)
@@ -363,17 +365,13 @@ var Buffer = Module("Buffer", {
     /**
      * Returns a list of all frames in the given window or current buffer.
      */
-    allFrames: function allFrames(win, focusedFirst) {
-        let frames = [];
-        (function rec(frame) {
-            if (true || frame.document.body instanceof Ci.nsIDOMHTMLBodyElement)
-                frames.push(frame);
-            Array.forEach(frame.frames, rec);
-        })(win || this.win);
+    allFrames: function allFrames(win=this.win, focusedFirst) {
+        let frames = iter(util.iterFrames(win)).toArray();
 
         if (focusedFirst)
             return frames.filter(f => f === this.focusedFrame).concat(
                    frames.filter(f => f !== this.focusedFrame));
+
         return frames;
     },
 
@@ -550,7 +548,7 @@ var Buffer = Module("Buffer", {
                             yield res[i];
         }
 
-        for (let frame of this.allFrames(null, true))
+        for (let frame of this.allFrames(undefined, true))
             for (let elem of followFrame(frame))
                 if (count-- === 0) {
                     if (follow)
@@ -819,7 +817,9 @@ var Buffer = Module("Buffer", {
                     self.saveURI({ uri: uri, file: file, context: elem });
                 },
 
-                completer: function (context) completion.savePage(context, elem)
+                completer: function (context) {
+                    completion.savePage(context, elem);
+                }
             }).open();
         }
         catch (e) {
@@ -872,31 +872,43 @@ var Buffer = Module("Buffer", {
      * Scrolls the currently active element horizontally. See
      * {@link Buffer.scrollHorizontal} for parameters.
      */
-    scrollHorizontal: function scrollHorizontal(increment, number)
-        Buffer.scrollHorizontal(this.findScrollable(number, true), increment, number),
+    scrollHorizontal: function scrollHorizontal(increment, number) {
+        return Buffer.scrollHorizontal(this.findScrollable(number, true),
+                                       increment,
+                                       number);
+    },
 
     /**
      * Scrolls the currently active element vertically. See
      * {@link Buffer.scrollVertical} for parameters.
      */
-    scrollVertical: function scrollVertical(increment, number)
-        Buffer.scrollVertical(this.findScrollable(number, false), increment, number),
+    scrollVertical: function scrollVertical(increment, number) {
+        return Buffer.scrollVertical(this.findScrollable(number, false),
+                                     increment,
+                                     number);
+    },
 
     /**
      * Scrolls the currently active element to the given horizontal and
      * vertical percentages. See {@link Buffer.scrollToPercent} for
      * parameters.
      */
-    scrollToPercent: function scrollToPercent(horizontal, vertical, dir)
-        Buffer.scrollToPercent(this.findScrollable(dir || 0, vertical == null), horizontal, vertical),
+    scrollToPercent: function scrollToPercent(horizontal, vertical, dir) {
+        return Buffer.scrollToPercent(this.findScrollable(dir || 0, vertical == null),
+                                      horizontal,
+                                      vertical);
+    },
 
     /**
      * Scrolls the currently active element to the given horizontal and
      * vertical positions. See {@link Buffer.scrollToPosition} for
      * parameters.
      */
-    scrollToPosition: function scrollToPosition(horizontal, vertical)
-        Buffer.scrollToPosition(this.findScrollable(0, vertical == null), horizontal, vertical),
+    scrollToPosition: function scrollToPosition(horizontal, vertical) {
+        return Buffer.scrollToPosition(this.findScrollable(0, vertical == null),
+                                       horizontal,
+                                       vertical);
+    },
 
     _scrollByScrollSize: function _scrollByScrollSize(count, direction) {
         let { options } = this.modules;
@@ -1896,8 +1908,7 @@ var Buffer = Module("Buffer", {
                       .getInterface(Ci.nsIWebBrowserPrint).print(settings, null);
 
                 dactyl.echomsg(_("print.sent"));
-            },
-            {
+            }, {
                 argCount: "?",
                 bang: true,
                 completer: function (context, args) {
@@ -1916,8 +1927,7 @@ var Buffer = Module("Buffer", {
                 dactyl.assert(!arg || opt.validator(opt.parse(arg)),
                               _("error.invalidArgument", arg));
                 buffer.showPageInfo(true, arg);
-            },
-            {
+            }, {
                 argCount: "?",
                 completer: function (context) {
                     modules.completion.optionValue(context, "pageinfo", "+", "");
@@ -1939,10 +1949,11 @@ var Buffer = Module("Buffer", {
                     options["usermode"] = false;
 
                 window.stylesheetSwitchAll(buffer.focusedFrame, arg);
-            },
-            {
+            }, {
                 argCount: "?",
-                completer: function (context) modules.completion.alternateStyleSheet(context),
+                completer: function (context) {
+                    modules.completion.alternateStyleSheet(context);
+                },
                 literal: 0
             });
 
@@ -2021,8 +2032,7 @@ var Buffer = Module("Buffer", {
                                     doc.contentType, false, null, chosenData,
                                     doc.referrer ? window.makeURI(doc.referrer) : null,
                                     doc, true);
-            },
-            {
+            }, {
                 argCount: "?",
                 bang: true,
                 completer: function (context) {
@@ -2046,11 +2056,14 @@ var Buffer = Module("Buffer", {
 
         commands.add(["vie[wsource]"],
             "View source code of current document",
-            function (args) { buffer.viewSource(args[0], args.bang); },
-            {
+            function (args) {
+                buffer.viewSource(args[0], args.bang);
+            }, {
                 argCount: "?",
                 bang: true,
-                completer: function (context) modules.completion.url(context, "bhf")
+                completer: function (context) {
+                    modules.completion.url(context, "bhf");
+                }
             });
 
         commands.add(["zo[om]"],
@@ -2111,7 +2124,9 @@ var Buffer = Module("Buffer", {
                             }
                         },
                         notificationCallbacks: Class(XPCOM([Ci.nsIChannelEventSink, Ci.nsIInterfaceRequestor]), {
-                            getInterface: function getInterface(iid) this.QueryInterface(iid),
+                            getInterface: function getInterface(iid) {
+                                return this.QueryInterface(iid);
+                            },
 
                             asyncOnChannelRedirect: function (oldChannel, newChannel, flags, callback) {
                                 if (newChannel instanceof Ci.nsIHttpChannel)
@@ -2338,7 +2353,7 @@ var Buffer = Module("Buffer", {
                 if (count >= 1 || !elem || !events.isContentNode(elem)) {
                     let xpath = ["frame", "iframe", "input", "xul:textbox", "textarea[not(@disabled) and not(@readonly)]"];
 
-                    let frames = buffer.allFrames(null, true);
+                    let frames = buffer.allFrames(undefined, true);
 
                     let elements = Ary.flatten(frames.map(win => [m for (m of DOM.XPath(xpath, win.document))]))
                                       .filter(function (elem) {
@@ -2480,7 +2495,9 @@ var Buffer = Module("Buffer", {
             "string", "UTF-8",
             {
                 scope: Option.SCOPE_LOCAL,
-                getter: function () buffer.docShell.QueryInterface(Ci.nsIDocCharset).charset,
+                getter: function () {
+                    return buffer.docShell.QueryInterface(Ci.nsIDocCharset).charset;
+                },
                 setter: function (val) {
                     if (options["encoding"] == val)
                         return val;
@@ -2496,7 +2513,9 @@ var Buffer = Module("Buffer", {
                     });
                     return null;
                 },
-                completer: function (context) completion.charset(context)
+                completer: function (context) {
+                    completion.charset(context);
+                }
             });
 
         options.add(["iskeyword", "isk"],
@@ -2507,7 +2526,7 @@ var Buffer = Module("Buffer", {
                     this.regexp = util.regexp(value);
                     return value;
                 },
-                validator: function (value) RegExp(value)
+                validator: function (value) { return RegExp(value); }
             });
 
         options.add(["jumptags", "jt"],
@@ -2523,8 +2542,10 @@ var Buffer = Module("Buffer", {
                         vals[k] = update(new String(v), { matcher: DOM.compileMatcher(Option.splitList(v)) });
                     return vals;
                 },
-                validator: function (value) DOM.validateMatcher.call(this, value)
-                    && Object.keys(value).every(v => v.length == 1)
+                validator: function (value) {
+                    return DOM.validateMatcher.call(this, value) &&
+                           Object.keys(value).every(v => v.length == 1);
+                }
             });
 
         options.add(["linenumbers", "ln"],
@@ -2596,7 +2617,7 @@ var Buffer = Module("Buffer", {
         options.add(["scroll", "scr"],
             "Number of lines to scroll with <C-u> and <C-d> commands",
             "number", 0,
-            { validator: function (value) value >= 0 });
+            { validator: function (value) { return value >= 0; } });
 
         options.add(["showstatuslinks", "ssli"],
             "Where to show the destination of the link under the cursor",
@@ -2621,7 +2642,9 @@ var Buffer = Module("Buffer", {
 
                 initValue: function () {},
 
-                getter: function getter(value) !prefs.get(this.PREF) ? 1 : value,
+                getter: function getter(value) {
+                    return !prefs.get(this.PREF) ? 1 : value;
+                },
 
                 setter: function setter(value) {
                     prefs.set(this.PREF, value > 1);
@@ -2629,15 +2652,19 @@ var Buffer = Module("Buffer", {
                         return value;
                 },
 
-                validator: function (value) value > 0
+                validator: function (value) { return value > 0; }
             });
 
         options.add(["usermode", "um"],
             "Show current website without styling defined by the author",
             "boolean", false,
             {
-                setter: function (value) buffer.contentViewer.authorStyleDisabled = value,
-                getter: function () buffer.contentViewer.authorStyleDisabled
+                setter: function (value) {
+                    return buffer.contentViewer.authorStyleDisabled = value;
+                },
+                getter: function () {
+                    return buffer.contentViewer.authorStyleDisabled;
+                }
             });
 
         options.add(["yankshort", "ys"],

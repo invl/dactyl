@@ -52,8 +52,8 @@ var Item = Class("SanitizeItem", {
     },
 
     // Hack for completion:
-    "0": Class.Property({ get: function () this.name }),
-    "1": Class.Property({ get: function () this.description }),
+    "0": Class.Property({ get: function () { return this.name; } }),
+    "1": Class.Property({ get: function () { return this.description; } }),
 
     description: Messages.Localized(""),
 
@@ -66,8 +66,10 @@ var Item = Class("SanitizeItem", {
     get cpd() { return prefs.get(this.cpdPref); },
     get shutdown() { return prefs.get(this.shutdownPref); },
 
-    shouldSanitize: function (shutdown) (!shutdown || this.builtin || this.persistent) &&
-        prefs.get(shutdown ? this.shutdownPref : this.pref)
+    shouldSanitize: function (shutdown) {
+        return (!shutdown || this.builtin || this.persistent) &&
+               prefs.get(shutdown ? this.shutdownPref : this.pref);
+    }
 }, {
     PREFIX: config.prefs.branch.root,
     BRANCH: "privacy.cpd.",
@@ -89,7 +91,10 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
 
         this.itemMap = {};
 
-        this.addItem("all", { description: "Sanitize all items", shouldSanitize: function () false });
+        this.addItem("all", {
+            description: "Sanitize all items",
+            shouldSanitize: function () { return false; }
+        });
         // Builtin items
         this.addItem("cache",       { builtin: true, description: "Cache" });
         this.addItem("downloads",   { builtin: true, description: "Download history" });
@@ -344,8 +349,8 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
         prefs.set("privacy.sanitize.sanitizeOnShutdown", Boolean(val));
     },
 
-    sanitize: function sanitize(items, range)
-        this.withSavedValues(["sanitizing"], function () {
+    sanitize: function sanitize(items, range) {
+        return this.withSavedValues(["sanitizing"], function () {
             this.sanitizing = true;
             let errors = this.sanitizeItems(items, range, null);
 
@@ -366,10 +371,11 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                 }
             }
             return errors;
-        }),
+        });
+    },
 
-    sanitizeItems: function sanitizeItems(items, range, host, key)
-        this.withSavedValues(["sanitizing"], function () {
+    sanitizeItems: function sanitizeItems(items, range, host, key) {
+        return this.withSavedValues(["sanitizing"], function () {
             this.sanitizing = true;
             if (items == null)
                 items = Object.keys(this.itemMap);
@@ -387,7 +393,8 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     util.reportError(e);
                 }
             return errors;
-        })
+        });
+    }
 }, {
     PERMS: {
         unset:   0,
@@ -415,8 +422,12 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
         offlineapps:  "offlineApps",
         sitesettings: "siteSettings"
     },
-    argToPref: function (arg) Sanitizer.argPrefMap[arg] || arg,
-    prefToArg: function (pref) pref.replace(/.*\./, "").toLowerCase(),
+    argToPref: function (arg) {
+        return Sanitizer.argPrefMap[arg] || arg;
+    },
+    prefToArg: function (pref) {
+        return pref.replace(/.*\./, "").toLowerCase();
+    },
 
     iterCookies: function* iterCookies(host) {
         for (let c of iter(services.cookies, Ci.nsICookie2))
@@ -507,15 +518,14 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                 else
                     sanitize(items);
 
-            },
-            {
+            }, {
                 argCount: "*", // FIXME: should be + and 0
                 bang: true,
                 completer: function (context) {
                     context.title = ["Privacy Item", "Description"];
                     context.completions = modules.options.get("sanitizeitems").values;
                 },
-                domains: function (args) args["-host"] || [],
+                domains: function (args) { return args["-host"] || []; },
                 options: [
                     {
                         names: ["-host", "-h"],
@@ -533,9 +543,13 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     }, {
                         names: ["-timespan", "-t"],
                         description: "Timespan for which to sanitize items",
-                        completer: function (context) modules.options.get("sanitizetimespan").completer(context),
+                        completer: function (context) {
+                            modules.options.get("sanitizetimespan").completer(context);
+                        },
                         type: modules.CommandOption.STRING,
-                        validator: function (arg) modules.options.get("sanitizetimespan").validator(arg)
+                        validator: function (arg) {
+                            return modules.options.get("sanitizetimespan").validator(arg);
+                        }
                     }
                 ],
                 privateData: true
@@ -645,8 +659,10 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     return res && !/^!/.test(res);
                 },
 
-                validator: function (values) values.length &&
-                    values.every(val => (val === "all" || hasOwnProperty(sanitizer.itemMap, val.replace(/^!/, ""))))
+                validator: function (values) {
+                    return values.length &&
+                           values.every(val => (val === "all" || hasOwnProperty(sanitizer.itemMap, val.replace(/^!/, ""))));
+                }
             });
 
         options.add(["sanitizeshutdown", "ss"],
@@ -659,10 +675,14 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                             for (i of values(sanitizer.itemMap))
                             if (i.persistent || i.builtin)];
                 },
-                getter: function () !sanitizer.runAtShutdown ? [] : [
-                    item.name for (item of values(sanitizer.itemMap))
-                    if (item.shouldSanitize(true))
-                ],
+                getter: function () {
+                    if (!sanitizer.runAtShutdown)
+                        return [];
+                    else
+                        return [item.name
+                               for (item of values(sanitizer.itemMap))
+                               if (item.shouldSanitize(true))];
+                },
                 setter: function (value) {
                     if (value.length === 0)
                         sanitizer.runAtShutdown = false;
@@ -712,7 +732,9 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     ["none", "Accept no cookies"],
                     ["visited", "Accept cookies from visited sites"]
                 ],
-                getter: function () (this.values[prefs.get(this.PREF)] || ["all"])[0],
+                getter: function () {
+                    return (this.values[prefs.get(this.PREF)] || ["all"])[0];
+                },
                 setter: function (val) {
                     prefs.set(this.PREF, this.values.map(i => i[0]).indexOf(val));
                     return val;
@@ -731,7 +753,9 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                     ["prompt",  "Always prompt for a lifetime"],
                     ["session", "The current session"]
                 ],
-                getter: function () (this.values[prefs.get(this.PREF)] || [prefs.get(this.PREF_DAYS)])[0],
+                getter: function () {
+                    return (this.values[prefs.get(this.PREF)] || [prefs.get(this.PREF_DAYS)])[0];
+                },
                 setter: function (value) {
                     let val = this.values.map(i => i[0]).indexOf(value);
                     if (val > -1)
@@ -743,7 +767,10 @@ var Sanitizer = Module("sanitizer", XPCOM([Ci.nsIObserver, Ci.nsISupportsWeakRef
                 },
                 initialValue: true,
                 persist: false,
-                validator: function validator(val) parseInt(val) == val || validator.superapply(this, arguments)
+                validator: function validator(val) {
+                    return parseInt(val) == val ||
+                           validator.superapply(this, arguments);
+                }
             });
     }
 });

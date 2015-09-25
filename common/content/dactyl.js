@@ -203,7 +203,8 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
     registerObserver: function registerObserver(type, callback, weak) {
         if (!(type in this._observers))
             this._observers[type] = [];
-        this._observers[type].push(weak ? util.weakReference(callback) : { get: function () callback });
+        this._observers[type].push(weak ? util.weakReference(callback)
+                                        : { get: function () { return callback; } });
     },
 
     registerObservers: function registerObservers(obj, prop) {
@@ -252,8 +253,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
 
                 commandline.commandOutput(
                     template.usage(results, params.format));
-            },
-            {
+            }, {
                 argCount: "*",
                 completer: function (context, args) {
                     context.keys.text = identity;
@@ -621,7 +621,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
      * @param {string} feature The feature name.
      * @returns {boolean}
      */
-    has: function has(feature) config.has(feature),
+    has: function has(feature) { return config.has(feature); },
 
     /**
      * @private
@@ -1084,11 +1084,12 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
             node.collapsed = !visible;
     },
 
-    confirmQuit: function confirmQuit()
-        prefs.withContext(function () {
+    confirmQuit: function confirmQuit() {
+        return prefs.withContext(function () {
             prefs.set("browser.warnOnQuit", false);
             return window.canQuitApplication();
-        }),
+        });
+    },
 
     /**
      * Quit the host application, no matter how many tabs/windows are open.
@@ -1332,8 +1333,8 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         options.add(["fullscreen", "fs"],
             "Show the current window fullscreen",
             "boolean", false, {
-                setter: function (value) window.fullScreen = value,
-                getter: function () window.fullScreen
+                setter: function (value) { return window.fullScreen = value; },
+                getter: function () { return window.fullScreen; }
             });
 
         const groups = [
@@ -1382,8 +1383,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                     prefs.safeSet("layout.scrollbar.side", opts.indexOf("l") >= 0 ? 3 : 2,
                                   _("option.guioptions.safeSet"));
                 },
-                validator: function (opts) Option.validIf(!(opts.indexOf("l") >= 0 && opts.indexOf("r") >= 0),
-                                                          UTF8("Only one of ‘l’ or ‘r’ allowed"))
+                validator: function (opts) {
+                    return Option.validIf(!(opts.indexOf("l") >= 0 && opts.indexOf("r") >= 0),
+                                          UTF8("Only one of ‘l’ or ‘r’ allowed"));
+                }
             },
             {
                 feature: "tabs",
@@ -1421,8 +1424,10 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                     events.checkFocus();
                     return value;
                 },
-                validator: function (val) Option.validateCompleter.call(this, val)
-                                       && groups.every(g => !g.validator || g.validator(val))
+                validator: function (val) {
+                    return Option.validateCompleter.call(this, val) &&
+                           groups.every(g => !g.validator || g.validator(val));
+                }
             });
 
         options.add(["loadplugins", "lpl"],
@@ -1466,13 +1471,17 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
         options.add(["urlseparator", "urlsep", "us"],
             "The regular expression used to separate multiple URLs in :open and friends",
             "string", " \\| ",
-            { validator: function (value) RegExp(value) });
+            { validator: function (value) { return RegExp(value); } });
 
         options.add(["verbose", "vbs"],
             "Define which info messages are displayed",
             "number", 1,
-            { validator: function (value) Option.validIf(value >= 0 && value <= 15,
-                                                         "Value must be between 0 and 15") });
+            {
+                validator: function (value) {
+                    return Option.validIf(value >= 0 && value <= 15,
+                                          "Value must be between 0 and 15");
+                }
+            });
 
         options.add(["visualbell", "vb"],
             "Use visual bell instead of beeping on errors",
@@ -1538,7 +1547,9 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 }
             }, {
                 argCount: "1",
-                completer: function (context) completion.menuItem(context),
+                completer: function (context) {
+                    completion.menuItem(context);
+                },
                 literal: 0
             });
 
@@ -1553,7 +1564,9 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                     dactyl.echoerr(e);
                 }
             }, {
-                completer: function (context) completion.javascript(context),
+                completer: function (context) {
+                    completion.javascript(context);
+                },
                 literal: 0
             });
 
@@ -1561,18 +1574,17 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
             "Load all or matching plugins",
             function (args) {
                 dactyl.loadPlugins(args.length ? args : null, args.bang);
-            },
-            {
+            }, {
                 argCount: "*",
                 bang: true,
                 keepQuotes: true,
                 serialGroup: 10,
-                serialize: function () [
-                    {
+                serialize: function () {
+                    return [{
                         command: this.name,
                         literalArg: options["loadplugins"].join(" ")
-                    }
-                ]
+                    }];
+                }
             });
 
         commands.add(["norm[al]"],
@@ -1593,7 +1605,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 });
             }, {
                 argCount: "1",
-                completer: function (context) completion.ex(context),
+                completer: function (context) { completion.ex(context); },
                 literal: 0,
                 privateData: "never-save",
                 subCommand: 0
@@ -1799,9 +1811,9 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 bang: true,
                 completer: function (context) {
                     if (/^:/.test(context.filter))
-                        return completion.ex(context);
+                        completion.ex(context);
                     else
-                        return completion.javascript(context);
+                        completion.javascript(context);
                 },
                 count: true,
                 hereDoc: true,
@@ -1827,7 +1839,7 @@ var Dactyl = Module("dactyl", XPCOM(Ci.nsISupportsWeakReference, ModuleBase), {
                 }
             }, {
                 argCount: "1",
-                completer: function (context) completion.ex(context),
+                completer: function (context) { completion.ex(context); },
                 count: true,
                 literal: 0,
                 subCommand: 0
